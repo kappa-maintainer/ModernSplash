@@ -1,3 +1,7 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
+import java.nio.file.Paths
+
 buildscript {
     repositories {
         maven { url = 'https://maven.minecraftforge.net' }
@@ -34,7 +38,10 @@ minecraft {
     runs {
         client {
             workingDirectory project.file('run/client')
-
+            jvmArg "-Dfml.coreMods.load=gkappa.modernsplash.MSLoadingPlugin"
+            jvmArg "-Dmixin.hotSwap=true"
+            jvmArg "-Dmixin.checks.interfaces=true"
+            jvmArg "-Dmixin.debug=true"
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
 
@@ -42,7 +49,9 @@ minecraft {
 
         server {
             workingDirectory project.file('run/server')
-
+            jvmArg "-Dfml.coreMods.load=gkappa.modernsplash.MSLoadingPlugin"
+            jvmArg "-Dmixin.hotSwap=true"
+            jvmArg "-Dmixin.checks.interfaces=true"
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
 
@@ -57,9 +66,16 @@ minecraft {
 
 sourceSets.main.resources { srcDir 'src/generated/resources' }
 
+configurations {
+    compileJar {
+        implementation.extendsFrom(compileJar)
+    }
+}
+
 repositories {
     maven { url = 'https://sizableshrimp.me/maven' }
     maven { url = 'https://repo.spongepowered.org/maven' }
+    maven { url = 'https://maven.cleanroommc.com' }
 }
 
 dependencies {
@@ -75,14 +91,18 @@ dependencies {
         exclude module: "gson"
         exclude module: "commons-io"
     }
+
+    compileOnly fg.deobf("zone.rong:mixinbooter:4.2")
+
+    runtimeOnly ("zone.rong:mixinbooter:4.2")
 }
 
 fancyGradle {
     patches {
         resources
-        //coremods
+        coremods
         //codeChickenLib
-        //asm
+        asm
     }
 }
 
@@ -117,14 +137,14 @@ def included = ["${mod_base_package.replace('.', '/')}/${mod_main_class}.java".t
 
 def expandedSrc = new File(project.buildDir, 'expandedSrc')
 def srcMainJava = project.file('src/main/java').toPath()
-def includedPaths = included.collect { java.nio.file.Paths.get(it) }
+def includedPaths = included.collect { Paths.get(it) }
 task javaReplaceTokens(type: Copy) {
     inputs.property 'tokens', modFileTokens
     from(srcMainJava) {
         include included
     }
     into expandedSrc
-    filter(org.apache.tools.ant.filters.ReplaceTokens, beginToken: '@', endToken: '@', tokens: modFileTokens)
+    filter(ReplaceTokens, beginToken: '@', endToken: '@', tokens: modFileTokens)
 }
 
 compileJava {
@@ -145,7 +165,8 @@ jar {
                 'Implementation-Version': mod_version,
                 'Implementation-Vendor': mod_authors,
                 'Implementation-Timestamp': new Date().format('yyyy-MM-dd\'T\'HH:mm:ssZ'),
-                "TweakClass": "org.spongepowered.asm.launch.MixinTweaker"
+                "TweakClass": "org.spongepowered.asm.launch.MixinTweaker",
+                "FMLCorePlugin": "gkappa.modernsplash.MSLoadingPlugin"
         ])
     }
 }

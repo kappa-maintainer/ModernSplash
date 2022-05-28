@@ -1,10 +1,10 @@
-package io.github.examplemod;
+package gkappa.modernsplash;
 
 public class Reference {
 	
     // Mod info
 	public static final String MOD_NAME = "@MODNAME@";
-    public static final String MOD_ID = "@MODID@";
+    public static final String MOD_ID = "modernsplash";
     public static final String MOD_VERSION = "@VERSION@";
     public static final String MOD_BUILD_NUMBER = "@BUILD_NUMBER@";
     public static final String MOD_CHANNEL = MOD_ID;

@@ -1,0 +1,12 @@
+{
+  "required": true,
+  "package": "gkappa.modernsplash.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "refmap": "mixins.splash.refmap.json",
+  "target": "@env(DEFAULT)",
+  "client": [
+    "SplashProgressMixin"
+  ],
+  "setSourceFile": true,
+  "minVersion": "0.8"
+}
