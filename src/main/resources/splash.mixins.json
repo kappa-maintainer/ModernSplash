@@ -5,7 +5,8 @@
   "refmap": "mixins.splash.refmap.json",
   "target": "@env(DEFAULT)",
   "client": [
-    "SplashProgressMixin"
+    "SplashProgressMixin",
+    "SplashProgress2Mixin"
   ],
   "setSourceFile": true,
   "minVersion": "0.8"
