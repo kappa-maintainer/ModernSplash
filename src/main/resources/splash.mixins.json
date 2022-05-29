@@ -5,9 +5,12 @@
   "refmap": "mixins.splash.refmap.json",
   "target": "@env(DEFAULT)",
   "client": [
-    "SplashProgressMixin",
-    "SplashProgress2Mixin"
+    "MinecraftMixin",
+    "TextureUtilMixin"
   ],
   "setSourceFile": true,
-  "minVersion": "0.8"
+  "minVersion": "0.8",
+  "mixins": [
+    "FMLClientHandlerMixin"
+  ]
 }
