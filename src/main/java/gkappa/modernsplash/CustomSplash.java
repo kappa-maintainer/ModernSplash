@@ -166,7 +166,7 @@ public class CustomSplash
         memoryLowColor =     getHex("memoryLow",     0xFFFFFF);
 
         final ResourceLocation fontLoc = new ResourceLocation(getString("fontTexture", "textures/font/ascii.png"));
-        final ResourceLocation logoLoc = new ResourceLocation("textures/gui/title/mojang.png");
+        final ResourceLocation logoLoc = new ResourceLocation("modernsplash:textures/gui/title/mojang.png");
         final ResourceLocation forgeLoc = new ResourceLocation(getString("forgeTexture", "fml:textures/gui/forge.png"));
         final ResourceLocation forgeFallbackLoc = new ResourceLocation("fml:textures/gui/forge.png");
 
@@ -269,7 +269,7 @@ public class CustomSplash
                     glLoadIdentity();
 
                     // mojang logo
-                    setColor(backgroundColor);
+                    setColor(fontColor);
                     glEnable(GL_TEXTURE_2D);
                     logoTexture.bind();
                     glBegin(GL_QUADS);
@@ -311,6 +311,7 @@ public class CustomSplash
                         }
                         glPopMatrix();
                     }
+                    /*
 
                     angle += 1;
 
@@ -342,6 +343,7 @@ public class CustomSplash
                     glVertex2f(fw, -fh);
                     glEnd();
                     glDisable(GL_TEXTURE_2D);
+                    */
 
                     // We use mutex to indicate safely to the main thread that we're taking the display global lock
                     // So the main thread can skip processing messages while we're updating.
@@ -404,12 +406,13 @@ public class CustomSplash
 
             private void drawBar(ProgressBar b)
             {
+                String progress = "" + b.getStep() + "/" + b.getSteps();
                 glPushMatrix();
                 // title - message
                 setColor(fontColor);
                 glScalef(2, 2, 1);
                 glEnable(GL_TEXTURE_2D);
-                fontRenderer.drawString(b.getTitle() + " - " + b.getMessage(), 0, 0, 0x000000);
+                fontRenderer.drawString(b.getTitle() + " - " + progress + " - " + b.getMessage(), 0, 0, 0x000000);
                 glDisable(GL_TEXTURE_2D);
                 glPopMatrix();
                 // border
@@ -423,15 +426,15 @@ public class CustomSplash
                 drawBox(barWidth - 2, barHeight - 2);
                 // slidy part
                 setColor(barColor);
-                glTranslatef(1, 1, 0);
-                drawBox((barWidth - 4) * (b.getStep() + 1) / (b.getSteps() + 1), barHeight - 4); // Step can sometimes be 0.
+                glTranslatef(2, 2, 0);
+                drawBox((barWidth - 6) * (b.getStep() + 1) / (b.getSteps() + 1), barHeight - 6); // Step can sometimes be 0.
                 // progress text
-                String progress = "" + b.getStep() + "/" + b.getSteps();
-                glTranslatef(((float)barWidth - 2) / 2 - fontRenderer.getStringWidth(progress), 2, 0);
-                setColor(barBackgroundColor);
+                //String progress = "" + b.getStep() + "/" + b.getSteps();
+                /*glTranslatef(((float)barWidth - 4) / 2 - fontRenderer.getStringWidth(progress), 4, 0);
+                setColor(fontColor);
                 glScalef(2, 2, 1);
                 glEnable(GL_TEXTURE_2D);
-                fontRenderer.drawString(progress, 0, 0, 0x000000);
+                fontRenderer.drawString(progress, 0, 0, 0x000000);*/
                 glPopMatrix();
             }
 
@@ -441,13 +444,13 @@ public class CustomSplash
                 int freeMemory = bytesToMb(Runtime.getRuntime().freeMemory());
                 int usedMemory = totalMemory - freeMemory;
                 float usedMemoryPercent = usedMemory / (float) maxMemory;
-
+                String progress = getMemoryString(usedMemory) + " / " + getMemoryString(maxMemory);
                 glPushMatrix();
                 // title - message
                 setColor(fontColor);
                 glScalef(2, 2, 1);
                 glEnable(GL_TEXTURE_2D);
-                fontRenderer.drawString("Memory Used / Total", 0, 0, 0x000000);
+                fontRenderer.drawString("Memory Used / Total : " + progress, 0, 0, 0x000000);
                 glDisable(GL_TEXTURE_2D);
                 glPopMatrix();
                 // border
@@ -483,19 +486,20 @@ public class CustomSplash
                 }
                 setColor(memoryLowColor);
                 glPushMatrix();
-                glTranslatef((barWidth - 2) * (totalMemory) / (maxMemory) - 2, 0, 0);
-                drawBox(2, barHeight - 2);
+                glTranslatef((barWidth - 6) * (totalMemory) / (maxMemory) - 2, 2, 0);
+                drawBox(2, barHeight - 6);
                 glPopMatrix();
                 setColor(memoryBarColor);
-                drawBox((barWidth - 2) * (usedMemory) / (maxMemory), barHeight - 2);
+                glTranslatef(2, 2, 0);
+                drawBox((barWidth - 6) * (usedMemory) / (maxMemory), barHeight - 6);
 
                 // progress text
-                String progress = getMemoryString(usedMemory) + " / " + getMemoryString(maxMemory);
-                glTranslatef(((float)barWidth - 2) / 2 - fontRenderer.getStringWidth(progress), 2, 0);
+                //String progress = getMemoryString(usedMemory) + " / " + getMemoryString(maxMemory);
+                /*glTranslatef(((float)barWidth - 2) / 2 - fontRenderer.getStringWidth(progress), 2, 0);
                 setColor(fontColor);
                 glScalef(2, 2, 1);
                 glEnable(GL_TEXTURE_2D);
-                fontRenderer.drawString(progress, 0, 0, 0x000000);
+                fontRenderer.drawString(progress, 0, 0, 0x000000);*/
                 glPopMatrix();
             }
 
