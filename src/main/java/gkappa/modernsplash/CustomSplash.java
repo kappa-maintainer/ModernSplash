@@ -89,29 +89,18 @@ public class CustomSplash
     private static Properties config;
 
     private static boolean enabled;
-    private static boolean darkModeOnly;
     private static boolean forgeLogo;
     private static boolean rotate;
-    private static int darkStartTime;
-    private static int darkEndTime;
     private static int logoOffset;
     private static int backgroundColor;
-    private static int backgroundColorNight;
     private static int fontColor;
-    private static int fontColorNight;
     private static int barBorderColor;
-    private static int barBorderColorNight;
     private static int barColor;
-    private static int barColorNight;
     private static int barBackgroundColor;
-    private static int barBackgroundColorNight;
     private static boolean showMemory;
     private static int memoryGoodColor;
-    private static int memoryGoodColorNight;
     private static int memoryWarnColor;
-    private static int memoryWarnColorNight;
     private static int memoryLowColor;
-    private static int memoryLowColorNight;
     private static float memoryColorPercent;
     private static long memoryColorChangeTime;
     public static boolean isDisplayVSyncForced = false;
@@ -173,11 +162,11 @@ public class CustomSplash
         forgeLogo =          getBool("forgeLogo",    false);
         rotate =             getBool("rotate",       false);
         showMemory =         getBool("showMemory",   true);
-        darkModeOnly =       getBool("darkModeOnly", false);
+        boolean darkModeOnly = getBool("darkModeOnly", false);
 
         logoOffset =         getInt("logoOffset",    0);
-        darkStartTime =      getInt("darkStartTime", 2300);
-        darkEndTime =        getInt("darkEndTime",   600);
+        int darkStartTime = getInt("darkStartTime", 2300);
+        int darkEndTime = getInt("darkEndTime", 600);
 
         backgroundColor =    getHex("background",    0xEF323D);
         fontColor =          getHex("font",          0xFFFFFF);
@@ -188,16 +177,16 @@ public class CustomSplash
         memoryWarnColor =    getHex("memoryWarn",    0xFFFFFF);
         memoryLowColor =     getHex("memoryLow",     0xFFFFFF);
 
-        backgroundColorNight =    getHex("backgroundDark",    0x202020);
-        fontColorNight =          getHex("fontDark",          0xFFFFFF);
-        barBorderColorNight =     getHex("barBorderDark",     0x4E4E4E);
-        barColorNight =           getHex("barDark",           0x4E4E4E);
-        barBackgroundColorNight = getHex("barBackgroundDark", 0x202020);
-        memoryGoodColorNight =    getHex("memoryGoodDark",    0x4E4E4E);
-        memoryWarnColorNight =    getHex("memoryWarnDark",    0x4E4E4E);
-        memoryLowColorNight =     getHex("memoryLowDark",     0x4E4E4E);
+        int backgroundColorNight = getHex("backgroundDark", 0x202020);
+        int fontColorNight = getHex("fontDark", 0xFFFFFF);
+        int barBorderColorNight = getHex("barBorderDark", 0x4E4E4E);
+        int barColorNight = getHex("barDark", 0x4E4E4E);
+        int barBackgroundColorNight = getHex("barBackgroundDark", 0x202020);
+        int memoryGoodColorNight = getHex("memoryGoodDark", 0x4E4E4E);
+        int memoryWarnColorNight = getHex("memoryWarnDark", 0x4E4E4E);
+        int memoryLowColorNight = getHex("memoryLowDark", 0x4E4E4E);
 
-        if(darkModeOnly || darkEndTime >= darkStartTime ? (now >= darkStartTime && now <= darkEndTime) : (now >= darkStartTime || now <= darkEndTime)) {
+        if(darkModeOnly || (darkEndTime >= darkStartTime ? (now >= darkStartTime && now <= darkEndTime) : (now >= darkStartTime || now <= darkEndTime))) {
             backgroundColor    = backgroundColorNight;
             fontColor          = fontColorNight;
             barBorderColor     = barBorderColorNight;
@@ -279,7 +268,7 @@ public class CustomSplash
             {
                 setGL();
                 fontTexture = new Texture(fontLoc, null);
-                logoTexture = new Texture(logoLoc, null, false);
+                logoTexture = new Texture(logoLoc, null, true);
                 forgeTexture = new Texture(forgeLoc, forgeFallbackLoc);
                 glEnable(GL_TEXTURE_2D);
                 fontRenderer = new SplashFontRenderer();
