@@ -50,6 +50,8 @@ import java.io.*;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.nio.IntBuffer;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.concurrent.Semaphore;
@@ -87,17 +89,29 @@ public class CustomSplash
     private static Properties config;
 
     private static boolean enabled;
+    private static boolean darkModeOnly;
+    private static boolean forgeLogo;
     private static boolean rotate;
+    private static int darkStartTime;
+    private static int darkEndTime;
     private static int logoOffset;
     private static int backgroundColor;
+    private static int backgroundColorNight;
     private static int fontColor;
+    private static int fontColorNight;
     private static int barBorderColor;
+    private static int barBorderColorNight;
     private static int barColor;
+    private static int barColorNight;
     private static int barBackgroundColor;
+    private static int barBackgroundColorNight;
     private static boolean showMemory;
     private static int memoryGoodColor;
+    private static int memoryGoodColorNight;
     private static int memoryWarnColor;
+    private static int memoryWarnColorNight;
     private static int memoryLowColor;
+    private static int memoryLowColorNight;
     private static float memoryColorPercent;
     private static long memoryColorChangeTime;
     public static boolean isDisplayVSyncForced = false;
@@ -146,6 +160,9 @@ public class CustomSplash
             FMLLog.log.info("Could not load splash.properties, will create a default one");
         }
 
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HHmm");
+        int now = Integer.parseInt(formatter.format(LocalDateTime.now()));
+
         //Some systems do not support this and have weird effects, so we need to detect and disable them by default.
         //The user can always force enable it if they want to take the responsibility for bugs.
         boolean defaultEnabled = true;
@@ -153,9 +170,15 @@ public class CustomSplash
         // Enable if we have the flag, and there's either no optifine, or optifine has added a key to the blackboard ("optifine.ForgeSplashCompatible")
         // Optifine authors - add this key to the blackboard if you feel your modifications are now compatible with this code.
         enabled =            getBool("enabled",      defaultEnabled) && ( (!FMLClientHandler.instance().hasOptifine()) || Launch.blackboard.containsKey("optifine.ForgeSplashCompatible"));
+        forgeLogo =          getBool("forgeLogo",    false);
         rotate =             getBool("rotate",       false);
         showMemory =         getBool("showMemory",   true);
+        darkModeOnly =       getBool("darkModeOnly", false);
+
         logoOffset =         getInt("logoOffset",    0);
+        darkStartTime =      getInt("darkStartTime", 2300);
+        darkEndTime =        getInt("darkEndTime",   600);
+
         backgroundColor =    getHex("background",    0xEF323D);
         fontColor =          getHex("font",          0xFFFFFF);
         barBorderColor =     getHex("barBorder",     0xFFFFFF);
@@ -164,6 +187,26 @@ public class CustomSplash
         memoryGoodColor =    getHex("memoryGood",    0xFFFFFF);
         memoryWarnColor =    getHex("memoryWarn",    0xFFFFFF);
         memoryLowColor =     getHex("memoryLow",     0xFFFFFF);
+
+        backgroundColorNight =    getHex("backgroundDark",    0x202020);
+        fontColorNight =          getHex("fontDark",          0xFFFFFF);
+        barBorderColorNight =     getHex("barBorderDark",     0x4E4E4E);
+        barColorNight =           getHex("barDark",           0x4E4E4E);
+        barBackgroundColorNight = getHex("barBackgroundDark", 0x202020);
+        memoryGoodColorNight =    getHex("memoryGoodDark",    0x4E4E4E);
+        memoryWarnColorNight =    getHex("memoryWarnDark",    0x4E4E4E);
+        memoryLowColorNight =     getHex("memoryLowDark",     0x4E4E4E);
+
+        if(darkModeOnly || darkEndTime >= darkStartTime ? (now >= darkStartTime && now <= darkEndTime) : (now >= darkStartTime || now <= darkEndTime)) {
+            backgroundColor    = backgroundColorNight;
+            fontColor          = fontColorNight;
+            barBorderColor     = barBorderColorNight;
+            barColor           = barColorNight;
+            barBackgroundColor = barBackgroundColorNight;
+            memoryGoodColor    = memoryGoodColorNight;
+            memoryWarnColor    = memoryWarnColorNight;
+            memoryLowColor     = memoryLowColorNight;
+        }
 
         final ResourceLocation fontLoc = new ResourceLocation(getString("fontTexture", "textures/font/ascii.png"));
         final ResourceLocation logoLoc = new ResourceLocation("modernsplash:textures/gui/title/mojang.png");
@@ -311,39 +354,37 @@ public class CustomSplash
                         }
                         glPopMatrix();
                     }
-                    /*
 
-                    angle += 1;
+                    if(forgeLogo) {
 
-                    // forge logo
-                    glColor4f(1, 1, 1, 1);
-                    float fw = (float)forgeTexture.getWidth() / 2;
-                    float fh = (float)forgeTexture.getHeight() / 2;
-                    if(rotate)
-                    {
-                        float sh = Math.max(fw, fh);
-                        glTranslatef(320 + w/2 - sh - logoOffset, 240 + h/2 - sh - logoOffset, 0);
-                        glRotatef(angle, 0, 0, 1);
+                        angle += 1;
+
+                        // forge logo
+                        glColor4f(1, 1, 1, 1);
+                        float fw = (float) forgeTexture.getWidth() / 2;
+                        float fh = (float) forgeTexture.getHeight() / 2;
+                        if (rotate) {
+                            float sh = Math.max(fw, fh);
+                            glTranslatef(320 + w / 2 - sh - logoOffset, 240 + h / 2 - sh - logoOffset, 0);
+                            glRotatef(angle, 0, 0, 1);
+                        } else {
+                            glTranslatef(320 + w / 2 - fw - logoOffset, 240 + h / 2 - fh - logoOffset, 0);
+                        }
+                        int f = (angle / 5) % forgeTexture.getFrames();
+                        glEnable(GL_TEXTURE_2D);
+                        forgeTexture.bind();
+                        glBegin(GL_QUADS);
+                        forgeTexture.texCoord(f, 0, 0);
+                        glVertex2f(-fw, -fh);
+                        forgeTexture.texCoord(f, 0, 1);
+                        glVertex2f(-fw, fh);
+                        forgeTexture.texCoord(f, 1, 1);
+                        glVertex2f(fw, fh);
+                        forgeTexture.texCoord(f, 1, 0);
+                        glVertex2f(fw, -fh);
+                        glEnd();
+                        glDisable(GL_TEXTURE_2D);
                     }
-                    else
-                    {
-                        glTranslatef(320 + w/2 - fw - logoOffset, 240 + h/2 - fh - logoOffset, 0);
-                    }
-                    int f = (angle / 5) % forgeTexture.getFrames();
-                    glEnable(GL_TEXTURE_2D);
-                    forgeTexture.bind();
-                    glBegin(GL_QUADS);
-                    forgeTexture.texCoord(f, 0, 0);
-                    glVertex2f(-fw, -fh);
-                    forgeTexture.texCoord(f, 0, 1);
-                    glVertex2f(-fw, fh);
-                    forgeTexture.texCoord(f, 1, 1);
-                    glVertex2f(fw, fh);
-                    forgeTexture.texCoord(f, 1, 0);
-                    glVertex2f(fw, -fh);
-                    glEnd();
-                    glDisable(GL_TEXTURE_2D);
-                    */
 
                     // We use mutex to indicate safely to the main thread that we're taking the display global lock
                     // So the main thread can skip processing messages while we're updating.
