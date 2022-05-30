@@ -98,6 +98,7 @@ public class CustomSplash
     private static int barColor;
     private static int barBackgroundColor;
     private static boolean showMemory;
+    private static boolean showTotalMemoryLine;
     private static int memoryGoodColor;
     private static int memoryWarnColor;
     private static int memoryLowColor;
@@ -158,15 +159,13 @@ public class CustomSplash
 
         // Enable if we have the flag, and there's either no optifine, or optifine has added a key to the blackboard ("optifine.ForgeSplashCompatible")
         // Optifine authors - add this key to the blackboard if you feel your modifications are now compatible with this code.
-        enabled =            getBool("enabled",      defaultEnabled) && ( (!FMLClientHandler.instance().hasOptifine()) || Launch.blackboard.containsKey("optifine.ForgeSplashCompatible"));
-        forgeLogo =          getBool("forgeLogo",    false);
-        rotate =             getBool("rotate",       false);
-        showMemory =         getBool("showMemory",   true);
-        boolean darkModeOnly = getBool("darkModeOnly", false);
+        enabled =             getBool("enabled",      defaultEnabled) && ( (!FMLClientHandler.instance().hasOptifine()) || Launch.blackboard.containsKey("optifine.ForgeSplashCompatible"));
+        forgeLogo =           getBool("forgeLogo",    false);
+        rotate =              getBool("rotate",       false);
+        showMemory =          getBool("showMemory",   true);
+        showTotalMemoryLine = getBool("showTotalMemoryLine", false);
 
         logoOffset =         getInt("logoOffset",    0);
-        int darkStartTime = getInt("darkStartTime", 2300);
-        int darkEndTime = getInt("darkEndTime", 600);
 
         backgroundColor =    getHex("background",    0xEF323D);
         fontColor =          getHex("font",          0xFFFFFF);
@@ -177,16 +176,21 @@ public class CustomSplash
         memoryWarnColor =    getHex("memoryWarn",    0xFFFFFF);
         memoryLowColor =     getHex("memoryLow",     0xFFFFFF);
 
-        int backgroundColorNight = getHex("backgroundDark", 0x202020);
-        int fontColorNight = getHex("fontDark", 0xFFFFFF);
-        int barBorderColorNight = getHex("barBorderDark", 0x4E4E4E);
-        int barColorNight = getHex("barDark", 0x4E4E4E);
-        int barBackgroundColorNight = getHex("barBackgroundDark", 0x202020);
-        int memoryGoodColorNight = getHex("memoryGoodDark", 0x4E4E4E);
-        int memoryWarnColorNight = getHex("memoryWarnDark", 0x4E4E4E);
-        int memoryLowColorNight = getHex("memoryLowDark", 0x4E4E4E);
+        boolean darkModeOnly = getBool("darkModeOnly", false);
 
-        if(darkModeOnly || (darkEndTime >= darkStartTime ? (now >= darkStartTime && now <= darkEndTime) : (now >= darkStartTime || now <= darkEndTime))) {
+        int darkStartTime = getInt("darkStartTime", 2300);
+        int darkEndTime =   getInt("darkEndTime", 600);
+
+        int backgroundColorNight =    getHex("backgroundDark", 0x202020);
+        int fontColorNight =          getHex("fontDark", 0xFFFFFF);
+        int barBorderColorNight =     getHex("barBorderDark", 0x4E4E4E);
+        int barColorNight =           getHex("barDark", 0x4E4E4E);
+        int barBackgroundColorNight = getHex("barBackgroundDark", 0x202020);
+        int memoryGoodColorNight =    getHex("memoryGoodDark", 0x4E4E4E);
+        int memoryWarnColorNight =    getHex("memoryWarnDark", 0x4E4E4E);
+        int memoryLowColorNight =     getHex("memoryLowDark", 0x4E4E4E);
+
+        if(darkModeOnly || (darkEndTime >= darkStartTime ? (now >= darkStartTime && now < darkEndTime) : (now >= darkStartTime || now <= darkEndTime))) {
             backgroundColor    = backgroundColorNight;
             fontColor          = fontColorNight;
             barBorderColor     = barBorderColorNight;
@@ -442,7 +446,7 @@ public class CustomSplash
                 setColor(fontColor);
                 glScalef(2, 2, 1);
                 glEnable(GL_TEXTURE_2D);
-                fontRenderer.drawString(b.getTitle() + " - " + progress + " - " + b.getMessage(), 0, 0, 0x000000);
+                fontRenderer.drawString(b.getTitle() + " " + progress + " - " + b.getMessage(), 0, 0, 0x000000);
                 glDisable(GL_TEXTURE_2D);
                 glPopMatrix();
                 // border
@@ -452,12 +456,12 @@ public class CustomSplash
                 drawBox(barWidth, barHeight);
                 // interior
                 setColor(barBackgroundColor);
-                glTranslatef(1, 1, 0);
-                drawBox(barWidth - 2, barHeight - 2);
+                glTranslatef(2, 2, 0);
+                drawBox(barWidth - 4, barHeight - 4);
                 // slidy part
                 setColor(barColor);
                 glTranslatef(2, 2, 0);
-                drawBox((barWidth - 6) * (b.getStep() + 1) / (b.getSteps() + 1), barHeight - 6); // Step can sometimes be 0.
+                drawBox((barWidth - 8) * (b.getStep() + 1) / (b.getSteps() + 1), barHeight - 8); // Step can sometimes be 0.
                 // progress text
                 //String progress = "" + b.getStep() + "/" + b.getSteps();
                 /*glTranslatef(((float)barWidth - 4) / 2 - fontRenderer.getStringWidth(progress), 4, 0);
@@ -490,8 +494,8 @@ public class CustomSplash
                 drawBox(barWidth, barHeight);
                 // interior
                 setColor(barBackgroundColor);
-                glTranslatef(1, 1, 0);
-                drawBox(barWidth - 2, barHeight - 2);
+                glTranslatef(2, 2, 0);
+                drawBox(barWidth - 4, barHeight - 4);
                 // slidy part
 
                 long time = System.currentTimeMillis();
@@ -514,14 +518,16 @@ public class CustomSplash
                 {
                     memoryBarColor = memoryLowColor;
                 }
-                setColor(memoryLowColor);
-                glPushMatrix();
-                glTranslatef((barWidth - 6) * (totalMemory) / (maxMemory) - 2, 2, 0);
-                drawBox(2, barHeight - 6);
-                glPopMatrix();
+                if(showTotalMemoryLine) {
+                    setColor(memoryLowColor);
+                    glPushMatrix();
+                    glTranslatef((barWidth - 8) * (totalMemory) / (maxMemory) - 2, 2, 0);
+                    drawBox(2, barHeight - 8);
+                    glPopMatrix();
+                }
                 setColor(memoryBarColor);
                 glTranslatef(2, 2, 0);
-                drawBox((barWidth - 6) * (usedMemory) / (maxMemory), barHeight - 6);
+                drawBox((barWidth - 8) * (usedMemory) / (maxMemory), barHeight - 8);
 
                 // progress text
                 //String progress = getMemoryString(usedMemory) + " / " + getMemoryString(maxMemory);
