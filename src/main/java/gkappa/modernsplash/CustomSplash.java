@@ -94,6 +94,7 @@ public class CustomSplash
     private static int logoOffset;
     private static int backgroundColor;
     private static int fontColor;
+    private static int logoColor;
     private static int barBorderColor;
     private static int barColor;
     private static int barBackgroundColor;
@@ -169,6 +170,7 @@ public class CustomSplash
 
         backgroundColor =    getHex("background",    0xEF323D);
         fontColor =          getHex("font",          0xFFFFFF);
+        logoColor =          getHex("logo",          0xFFFFFF);
         barBorderColor =     getHex("barBorder",     0xFFFFFF);
         barColor =           getHex("bar",           0xFFFFFF);
         barBackgroundColor = getHex("barBackground", 0xEF323D);
@@ -182,7 +184,8 @@ public class CustomSplash
         int darkEndTime =   getInt("darkEndTime", 600);
 
         int backgroundColorNight =    getHex("backgroundDark", 0x202020);
-        int fontColorNight =          getHex("fontDark", 0xFFFFFF);
+        int fontColorNight =          getHex("fontDark", 0x606060);
+        int logoColorNight =          getHex("logoDark", 0x999999);
         int barBorderColorNight =     getHex("barBorderDark", 0x4E4E4E);
         int barColorNight =           getHex("barDark", 0x4E4E4E);
         int barBackgroundColorNight = getHex("barBackgroundDark", 0x202020);
@@ -193,6 +196,7 @@ public class CustomSplash
         if(darkModeOnly || (darkEndTime >= darkStartTime ? (now >= darkStartTime && now < darkEndTime) : (now >= darkStartTime || now <= darkEndTime))) {
             backgroundColor    = backgroundColorNight;
             fontColor          = fontColorNight;
+            logoColor          = logoColorNight;
             barBorderColor     = barBorderColorNight;
             barColor           = barColorNight;
             barBackgroundColor = barBackgroundColorNight;
@@ -305,7 +309,7 @@ public class CustomSplash
                     glLoadIdentity();
 
                     // mojang logo
-                    setColor(fontColor);
+                    setColor(logoColor);
                     glEnable(GL_TEXTURE_2D);
                     logoTexture.bind();
                     glBegin(GL_QUADS);
@@ -484,7 +488,7 @@ public class CustomSplash
                 setColor(fontColor);
                 glScalef(2, 2, 1);
                 glEnable(GL_TEXTURE_2D);
-                fontRenderer.drawString("Memory Used / Total : " + progress, 0, 0, 0x000000);
+                fontRenderer.drawString("Memory Usage : " + progress, 0, 0, 0x000000);
                 glDisable(GL_TEXTURE_2D);
                 glPopMatrix();
                 // border
