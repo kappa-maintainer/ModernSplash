@@ -21,22 +21,22 @@ package gkappa.modernsplash;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.resources.*;
 import net.minecraft.crash.CrashReport;
 import net.minecraft.launchwrapper.Launch;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.client.FMLClientHandler;
-import net.minecraftforge.fml.common.*;
-import net.minecraftforge.fml.common.ProgressManager.ProgressBar;
-import net.minecraftforge.fml.common.asm.FMLSanityChecker;
+import cpw.mods.fml.client.FMLClientHandler;
+import cpw.mods.fml.common.*;
+import cpw.mods.fml.common.ProgressManager.ProgressBar;
+import cpw.mods.fml.common.asm.FMLSanityChecker;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.Drawable;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.SharedDrawable;
 import org.lwjgl.util.glu.GLU;
 
@@ -48,6 +48,7 @@ import javax.imageio.stream.ImageInputStream;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -78,7 +79,7 @@ public class CustomSplash
     private static final Lock lock = new ReentrantLock(true);
     private static SplashFontRenderer fontRenderer;
 
-    private static final IResourcePack mcPack = Minecraft.getMinecraft().defaultResourcePack;
+    private static final IResourcePack mcPack = Minecraft.getMinecraft().mcDefaultResourcePack;
     private static final IResourcePack fmlPack = createResourcePack(FMLSanityChecker.fmlLocation);
     private static IResourcePack miscPack;
 
@@ -135,7 +136,7 @@ public class CustomSplash
 
     public static void start()
     {
-        File configFile = new File(Minecraft.getMinecraft().gameDir, "config/splash.properties");
+        File configFile = new File(Minecraft.getMinecraft().mcDataDir, "config/splash.properties");
 
         File parent = configFile.getParentFile();
         if (!parent.exists())
@@ -148,7 +149,7 @@ public class CustomSplash
         }
         catch(IOException e)
         {
-            FMLLog.log.info("Could not load splash.properties, will create a default one");
+            FMLLog.info("Could not load splash.properties, will create a default one");
         }
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HHmm");
@@ -210,7 +211,7 @@ public class CustomSplash
         final ResourceLocation forgeLoc = new ResourceLocation(getString("forgeTexture", "fml:textures/gui/forge.png"));
         final ResourceLocation forgeFallbackLoc = new ResourceLocation("fml:textures/gui/forge.png");
 
-        File miscPackFile = new File(Minecraft.getMinecraft().gameDir, getString("resourcePackPath", "resources"));
+        File miscPackFile = new File(Minecraft.getMinecraft().mcDataDir, getString("resourcePackPath", "resources"));
 
         try (Writer w = new OutputStreamWriter(new FileOutputStream(configFile), StandardCharsets.UTF_8))
         {
@@ -218,7 +219,7 @@ public class CustomSplash
         }
         catch(IOException e)
         {
-            FMLLog.log.error("Could not save the splash.properties file", e);
+            FMLLog.severe("Could not save the splash.properties file", e);
         }
 
         miscPack = createResourcePack(miscPackFile);
@@ -245,7 +246,7 @@ public class CustomSplash
         CrashReport report = CrashReport.makeCrashReport(new Throwable(), "Loading screen debug info");
         StringBuilder systemDetailsBuilder = new StringBuilder();
         report.getCategory().appendToStringBuilder(systemDetailsBuilder);
-        FMLLog.log.info(systemDetailsBuilder.toString());
+        FMLLog.info(systemDetailsBuilder.toString());
 
         try
         {
@@ -255,7 +256,7 @@ public class CustomSplash
         }
         catch (LWJGLException e)
         {
-            FMLLog.log.error("Error starting SplashProgress:", e);
+            FMLLog.severe("Error starting SplashProgress:", e);
             disableSplash(e);
         }
 
@@ -413,13 +414,13 @@ public class CustomSplash
                         if (!isDisplayVSyncForced)
                         {
                             isDisplayVSyncForced = true;
-                            FMLLog.log.info("Using alternative sync timing : {} frames of Display.update took {} nanos", TIMING_FRAME_COUNT, updateTiming);
+                            FMLLog.info("Using alternative sync timing : {} frames of Display.update took {} nanos", TIMING_FRAME_COUNT, updateTiming);
                         }
                         try { Thread.sleep(16); } catch (InterruptedException ie) {}
                     } else
                     {
                         if (framecount ==TIMING_FRAME_COUNT) {
-                            FMLLog.log.info("Using sync timing. {} frames of Display.update took {} nanos", TIMING_FRAME_COUNT, updateTiming);
+                            FMLLog.info("Using sync timing. {} frames of Display.update took {} nanos", TIMING_FRAME_COUNT, updateTiming);
                         }
                         Display.sync(100);
                     }
@@ -557,7 +558,7 @@ public class CustomSplash
                 }
                 catch (LWJGLException e)
                 {
-                    FMLLog.log.error("Error setting GL context:", e);
+                    FMLLog.severe("Error setting GL context:", e);
                     throw new RuntimeException(e);
                 }
                 glClearColor((float)((backgroundColor >> 16) & 0xFF) / 0xFF, (float)((backgroundColor >> 8) & 0xFF) / 0xFF, (float)(backgroundColor & 0xFF) / 0xFF, 1);
@@ -584,7 +585,7 @@ public class CustomSplash
                 }
                 catch (LWJGLException e)
                 {
-                    FMLLog.log.error("Error releasing GL context:", e);
+                    FMLLog.severe("Error releasing GL context:", e);
                     throw new RuntimeException(e);
                 }
                 finally
@@ -598,7 +599,7 @@ public class CustomSplash
             @Override
             public void uncaughtException(Thread t, Throwable e)
             {
-                FMLLog.log.error("Splash thread Exception", e);
+                FMLLog.severe("Splash thread Exception", e);
                 threadError = e;
             }
         });
@@ -612,8 +613,8 @@ public class CustomSplash
         if (max_texture_size != -1) return max_texture_size;
         for (int i = 0x4000; i > 0; i >>= 1)
         {
-            GlStateManager.glTexImage2D(GL_PROXY_TEXTURE_2D, 0, GL_RGBA, i, i, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
-            if (GlStateManager.glGetTexLevelParameteri(GL_PROXY_TEXTURE_2D, 0, GL_TEXTURE_WIDTH) != 0)
+            GL11.glTexImage2D(GL_PROXY_TEXTURE_2D, 0, GL_RGBA, i, i, 0, GL_RGBA, GL_UNSIGNED_BYTE, (ByteBuffer) null);
+            if (GL11.glGetTexLevelParameteri(GL_PROXY_TEXTURE_2D, 0, GL_TEXTURE_WIDTH) != 0)
             {
                 max_texture_size = i;
                 return i;
@@ -649,7 +650,7 @@ public class CustomSplash
         }
         catch (LWJGLException e)
         {
-            FMLLog.log.error("Error setting GL context:", e);
+            FMLLog.severe("Error setting GL context:", e);
             throw new RuntimeException(e);
         }
     }
@@ -670,7 +671,7 @@ public class CustomSplash
         }
         catch (LWJGLException e)
         {
-            FMLLog.log.error("Error releasing GL context:", e);
+            FMLLog.severe("Error releasing GL context:", e);
             throw new RuntimeException(e);
         }
         lock.unlock();
@@ -693,7 +694,7 @@ public class CustomSplash
         }
         catch (Exception e)
         {
-            FMLLog.log.error("Error finishing SplashProgress:", e);
+            FMLLog.severe("Error finishing SplashProgress:", e);
             disableSplash(e);
         }
     }
@@ -732,7 +733,7 @@ public class CustomSplash
 
     private static boolean disableSplash()
     {
-        File configFile = new File(Minecraft.getMinecraft().gameDir, "config/splash.properties");
+        File configFile = new File(Minecraft.getMinecraft().mcDataDir, "config/splash.properties");
         File parent = configFile.getParentFile();
         if (!parent.exists())
             parent.mkdirs();
@@ -746,7 +747,7 @@ public class CustomSplash
         }
         catch(IOException e)
         {
-            FMLLog.log.error("Could not save the splash.properties file", e);
+            FMLLog.severe("Could not save the splash.properties file", e);
             return false;
         }
         return true;
@@ -852,7 +853,7 @@ public class CustomSplash
             }
             catch(IOException e)
             {
-                FMLLog.log.error("Error reading texture from file: {}", location, e);
+                FMLLog.severe("Error reading texture from file: {}", location, e);
                 throw new RuntimeException(e);
             }
             finally
@@ -932,20 +933,13 @@ public class CustomSplash
             fontTexture.bind();
         }
 
-        @Nonnull
-        @Override
-        protected IResource getResource(@Nonnull ResourceLocation location) throws IOException
-        {
-            DefaultResourcePack pack = Minecraft.getMinecraft().defaultResourcePack;
-            return new SimpleResource(pack.getPackName(), location, pack.getInputStream(location), null, null);
-        }
     }
 
-    public static void drawVanillaScreen(TextureManager renderEngine) throws LWJGLException
+    public static void drawVanillaScreen() throws LWJGLException
     {
         if(!enabled)
         {
-            Minecraft.getMinecraft().drawSplashScreen(renderEngine);
+            Minecraft.getMinecraft().loadScreen();
         }
     }
 

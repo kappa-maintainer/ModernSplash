@@ -1,17 +1,16 @@
 package gkappa.modernsplash;
 
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.Mod.EventHandler;
-import net.minecraftforge.fml.common.Mod.Instance;
-import net.minecraftforge.fml.common.event.*;
+import cpw.mods.fml.common.Mod;
+import cpw.mods.fml.common.Mod.EventHandler;
+import cpw.mods.fml.common.Mod.Instance;
+import cpw.mods.fml.common.event.*;
 
 @Mod(
         modid = Reference.MOD_ID,
         name = Reference.MOD_NAME,
         useMetadata = true,
         version = Reference.MOD_VERSION,
-        dependencies = Reference.MOD_DEPENDENCIES,
-        clientSideOnly = true
+        dependencies = Reference.MOD_DEPENDENCIES
 )
 public class ModernSplash {
     
