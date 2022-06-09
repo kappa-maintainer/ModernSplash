@@ -10,7 +10,8 @@ import net.minecraftforge.fml.common.event.*;
         name = Reference.MOD_NAME,
         useMetadata = true,
         version = Reference.MOD_VERSION,
-        dependencies = Reference.MOD_DEPENDENCIES
+        dependencies = Reference.MOD_DEPENDENCIES,
+        clientSideOnly = true
 )
 public class ModernSplash {
     
