@@ -48,6 +48,7 @@ import javax.imageio.stream.ImageInputStream;
 import java.awt.image.BufferedImage;
 import java.io.*;
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.lang.management.ManagementFactory;
 import java.nio.IntBuffer;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -106,6 +107,7 @@ public class CustomSplash
     private static float memoryColorPercent;
     private static long memoryColorChangeTime;
     public static boolean isDisplayVSyncForced = false;
+    public static boolean displayStartupTimeOnMainMenu = true;
     private static final int TIMING_FRAME_COUNT = 200;
     private static final int TIMING_FRAME_THRESHOLD = TIMING_FRAME_COUNT * 5 * 1000000; // 5 ms per frame, scaled to nanos
 
@@ -117,6 +119,8 @@ public class CustomSplash
         config.setProperty(name, value);
         return value;
     }
+
+
 
     private static boolean getBool(String name, boolean def)
     {
@@ -177,6 +181,8 @@ public class CustomSplash
         memoryGoodColor =    getHex("memoryGood",    0xFFFFFF);
         memoryWarnColor =    getHex("memoryWarn",    0xFFFFFF);
         memoryLowColor =     getHex("memoryLow",     0xFFFFFF);
+
+        displayStartupTimeOnMainMenu = getBool("timeOnMainMenu", true);
 
         boolean darkModeOnly = getBool("darkModeOnly", false);
 
@@ -333,6 +339,17 @@ public class CustomSplash
                         glPopMatrix();
                     }
 
+                    // timer
+                    glPushMatrix();
+                    setColor(fontColor);
+                    glTranslatef(320 - Display.getWidth() / 2 + 2, 240 + Display.getHeight() / 2 - textHeight2 + 2, 0);
+                    glScalef(2, 2, 1);
+                    glEnable(GL_TEXTURE_2D);
+                    String renderString = getString();
+                    fontRenderer.drawString(renderString, 0, 0, 0x000000);
+                    glDisable(GL_TEXTURE_2D);
+                    glPopMatrix();
+
                     // bars
                     if(first != null)
                     {
@@ -425,6 +442,26 @@ public class CustomSplash
                     }
                 }
                 clearGL();
+            }
+
+            private String getString(){
+                long startupTime = ManagementFactory.getRuntimeMXBean().getUptime();
+
+                if(ModernSplash.doneTime > 0) startupTime = ModernSplash.doneTime;
+
+                long minutes = (startupTime / 1000) / 60;
+                long seconds = (startupTime / 1000) % 60;
+
+                String str = "Startup: " + minutes + "m " + seconds + "s";
+
+                if(MSLoadingPlugin.expectedTime > 0){
+                    long ex_minutes = (MSLoadingPlugin.expectedTime / 1000) / 60;
+                    long ex_seconds = (MSLoadingPlugin.expectedTime / 1000) % 60;
+
+                    str += " / ~" + ex_minutes + "m " + ex_seconds + "s";
+                }
+
+                return str;
             }
 
             private void setColor(int color)
