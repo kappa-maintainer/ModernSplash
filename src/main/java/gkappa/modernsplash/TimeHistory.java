@@ -33,16 +33,16 @@ public class TimeHistory {
 
         long sum = 0;
         long temp;
-        int nonzero = 0;
+        int count = 0;
         for(int i = 0; i < 5; i++) {
             temp = getLong(String.valueOf(i));
-            if(temp > 0) nonzero++;
+            if(temp > 0) count++;
             queue.add(temp);
             sum += temp;
         }
 
 
-        return sum == 0 ? 0 : sum / nonzero;
+        return sum == 0 ? 0 : sum / count;
 
 
     }
@@ -53,7 +53,7 @@ public class TimeHistory {
         //if(queue.size() != 5) return;
         int i = 0;
         for(long l : queue) {
-            config.setProperty(String.valueOf(i), Long.toString(l));
+            config.setProperty(String.valueOf(i++), Long.toString(l));
         }
 
         try (Writer w = new OutputStreamWriter(Files.newOutputStream(configFile.toPath()), StandardCharsets.UTF_8))

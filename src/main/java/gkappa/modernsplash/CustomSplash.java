@@ -108,6 +108,7 @@ public class CustomSplash
     private static long memoryColorChangeTime;
     public static boolean isDisplayVSyncForced = false;
     public static boolean displayStartupTimeOnMainMenu = true;
+    public static boolean enableTimer = true;
     private static final int TIMING_FRAME_COUNT = 200;
     private static final int TIMING_FRAME_THRESHOLD = TIMING_FRAME_COUNT * 5 * 1000000; // 5 ms per frame, scaled to nanos
 
@@ -165,10 +166,11 @@ public class CustomSplash
         // Enable if we have the flag, and there's either no optifine, or optifine has added a key to the blackboard ("optifine.ForgeSplashCompatible")
         // Optifine authors - add this key to the blackboard if you feel your modifications are now compatible with this code.
         enabled =             getBool("enabled",      defaultEnabled) && ( (!FMLClientHandler.instance().hasOptifine()) || Launch.blackboard.containsKey("optifine.ForgeSplashCompatible"));
-        forgeLogo =           getBool("forgeLogo",    false);
-        rotate =              getBool("rotate",       false);
-        showMemory =          getBool("showMemory",   true);
+        forgeLogo =           getBool("forgeLogo",           false);
+        rotate =              getBool("rotate",              false);
+        showMemory =          getBool("showMemory",           true);
         showTotalMemoryLine = getBool("showTotalMemoryLine", false);
+        enableTimer =         getBool("enableTimer",          true);
 
         logoOffset =         getInt("logoOffset",    0);
 
@@ -189,15 +191,15 @@ public class CustomSplash
         int darkStartTime = getInt("darkStartTime", 2300);
         int darkEndTime =   getInt("darkEndTime", 600);
 
-        int backgroundColorNight =    getHex("backgroundDark", 0x202020);
-        int fontColorNight =          getHex("fontDark", 0x606060);
-        int logoColorNight =          getHex("logoDark", 0x999999);
-        int barBorderColorNight =     getHex("barBorderDark", 0x4E4E4E);
-        int barColorNight =           getHex("barDark", 0x4E4E4E);
+        int backgroundColorNight =    getHex("backgroundDark",    0x202020);
+        int fontColorNight =          getHex("fontDark",          0x606060);
+        int logoColorNight =          getHex("logoDark",          0x999999);
+        int barBorderColorNight =     getHex("barBorderDark",     0x4E4E4E);
+        int barColorNight =           getHex("barDark",           0x4E4E4E);
         int barBackgroundColorNight = getHex("barBackgroundDark", 0x202020);
-        int memoryGoodColorNight =    getHex("memoryGoodDark", 0x4E4E4E);
-        int memoryWarnColorNight =    getHex("memoryWarnDark", 0x4E4E4E);
-        int memoryLowColorNight =     getHex("memoryLowDark", 0x4E4E4E);
+        int memoryGoodColorNight =    getHex("memoryGoodDark",    0x4E4E4E);
+        int memoryWarnColorNight =    getHex("memoryWarnDark",    0x4E4E4E);
+        int memoryLowColorNight =     getHex("memoryLowDark",     0x4E4E4E);
 
         if(darkModeOnly || (darkEndTime >= darkStartTime ? (now >= darkStartTime && now < darkEndTime) : (now >= darkStartTime || now <= darkEndTime))) {
             backgroundColor    = backgroundColorNight;
@@ -274,7 +276,7 @@ public class CustomSplash
             private final int barWidth = 400;
             private final int barHeight = 20;
             private final int textHeight2 = 20;
-            private final int barOffset = 55;
+            private final int barOffset = 45;
             private long updateTiming;
             private long framecount;
             @Override
@@ -340,15 +342,17 @@ public class CustomSplash
                     }
 
                     // timer
-                    glPushMatrix();
-                    setColor(fontColor);
-                    glTranslatef(320 - Display.getWidth() / 2 + 2, 240 + Display.getHeight() / 2 - textHeight2 + 2, 0);
-                    glScalef(2, 2, 1);
-                    glEnable(GL_TEXTURE_2D);
-                    String renderString = getString();
-                    fontRenderer.drawString(renderString, 0, 0, 0x000000);
-                    glDisable(GL_TEXTURE_2D);
-                    glPopMatrix();
+                    if(enableTimer) {
+                        glPushMatrix();
+                        setColor(fontColor);
+                        glTranslatef(320 - Display.getWidth() / 2 + 4, 240 + Display.getHeight() / 2 - textHeight2, 0);
+                        glScalef(2, 2, 1);
+                        glEnable(GL_TEXTURE_2D);
+                        String renderString = getString();
+                        fontRenderer.drawString(renderString, 0, 0, 0x000000);
+                        glDisable(GL_TEXTURE_2D);
+                        glPopMatrix();
+                    }
 
                     // bars
                     if(first != null)
