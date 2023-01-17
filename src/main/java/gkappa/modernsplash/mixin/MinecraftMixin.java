@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(Minecraft.class)
 public class MinecraftMixin {
-    @Shadow public TextureManager renderEngine;
+    //@Shadow public TextureManager renderEngine;
 
     @Redirect(method = "startGame", at = @At(value = "INVOKE", remap = false, target = "Lcpw/mods/fml/client/SplashProgress;drawVanillaScreen()V"))
     private void rdDrawVanillaScreen() throws LWJGLException {
