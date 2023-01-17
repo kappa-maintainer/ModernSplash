@@ -1,6 +1,8 @@
 package gkappa.modernsplash;
 
+import cpw.mods.fml.relauncher.FMLLaunchHandler;
 import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
+import cpw.mods.fml.relauncher.Side;
 import org.spongepowered.asm.launch.MixinBootstrap;
 import org.spongepowered.asm.lib.tree.ClassNode;
 import org.spongepowered.asm.mixin.Mixins;
@@ -14,6 +16,13 @@ import java.util.Map;
 import java.util.Set;
 
 public class MSLoadingPlugin implements IFMLLoadingPlugin, IMixinConfigPlugin {
+    public static long expectedTime = 0;
+
+    public  MSLoadingPlugin() {
+        if(FMLLaunchHandler.side() == Side.CLIENT) {
+            expectedTime = TimeHistory.getEstimateTime();
+        }
+    }
     @Override
     public String[] getASMTransformerClass() {
         return new String[0];

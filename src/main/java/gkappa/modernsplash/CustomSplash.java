@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.lang.Thread.UncaughtExceptionHandler;
+import java.lang.management.ManagementFactory;
 import java.nio.IntBuffer;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -93,6 +94,9 @@ public class CustomSplash
     private static int barBackgroundColor;
     private static boolean showMemory;
     private static boolean showTotalMemoryLine;
+
+    public static boolean displayStartupTimeOnMainMenu = true;
+    public static boolean enableTimer = true;
     private static int memoryGoodColor;
     private static int memoryWarnColor;
     private static int memoryLowColor;
@@ -146,11 +150,12 @@ public class CustomSplash
 
         // Enable if we have the flag, and there's either no optifine, or optifine has added a key to the blackboard ("optifine.ForgeSplashCompatible")
         // Optifine authors - add this key to the blackboard if you feel your modifications are now compatible with this code.
-        enabled =             getBool("enabled",      true) && ( (!FMLClientHandler.instance().hasOptifine()) || Launch.blackboard.containsKey("optifine.ForgeSplashCompatible"));
-        rotate =              getBool("rotate",       false);
-        forgeLogo =           getBool("forgeLogo",    false);
-        showMemory =          getBool("showMemory",   true);
+        enabled =             getBool("enabled",              true) && ( (!FMLClientHandler.instance().hasOptifine()) || Launch.blackboard.containsKey("optifine.ForgeSplashCompatible"));
+        rotate =              getBool("rotate",              false);
+        forgeLogo =           getBool("forgeLogo",           false);
+        showMemory =          getBool("showMemory",           true);
         showTotalMemoryLine = getBool("showTotalMemoryLine", false);
+        enableTimer =         getBool("enableTimer",          true);
 
         logoOffset =         getInt("logoOffset",    0);
 
@@ -163,6 +168,8 @@ public class CustomSplash
         memoryGoodColor =    getHex("memoryGood",    0xFFFFFF);
         memoryWarnColor =    getHex("memoryWarn",    0xFFFFFF);
         memoryLowColor =     getHex("memoryLow",     0xFFFFFF);
+
+        displayStartupTimeOnMainMenu = getBool("timeOnMainMenu", true);
 
         boolean darkModeOnly = getBool("darkModeOnly", false);
 
@@ -255,7 +262,7 @@ public class CustomSplash
             private final int barWidth = 400;
             private final int barHeight = 20;
             private final int textHeight2 = 20;
-            private final int barOffset = 55;
+            private final int barOffset = 45;
 
             public void run()
             {
@@ -315,6 +322,20 @@ public class CustomSplash
                         drawMemoryBar();
                         glPopMatrix();
                     }
+
+                    // timer
+                    if(enableTimer) {
+                        glPushMatrix();
+                        setColor(fontColor);
+                        glTranslatef(320 - Display.getWidth() / 2 + 4, 240 + Display.getHeight() / 2 - textHeight2, 0);
+                        glScalef(2, 2, 1);
+                        glEnable(GL_TEXTURE_2D);
+                        String renderString = getString();
+                        fontRenderer.drawString(renderString, 0, 0, fontColor);
+                        glDisable(GL_TEXTURE_2D);
+                        glPopMatrix();
+                    }
+
                     // bars
                     if(first != null)
                     {
@@ -381,6 +402,26 @@ public class CustomSplash
                     Display.sync(100);
                 }
                 clearGL();
+            }
+
+            private String getString(){
+                long startupTime = ManagementFactory.getRuntimeMXBean().getUptime();
+
+                if(ModernSplash.doneTime > 0) startupTime = ModernSplash.doneTime;
+
+                long minutes = (startupTime / 1000) / 60;
+                long seconds = (startupTime / 1000) % 60;
+
+                String str = "Startup: " + minutes + "m " + seconds + "s";
+
+                if(MSLoadingPlugin.expectedTime > 0){
+                    long ex_minutes = (MSLoadingPlugin.expectedTime / 1000) / 60;
+                    long ex_seconds = (MSLoadingPlugin.expectedTime / 1000) % 60;
+
+                    str += " / ~" + ex_minutes + "m " + ex_seconds + "s";
+                }
+
+                return str;
             }
 
             private void setColor(int color)
