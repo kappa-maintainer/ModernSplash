@@ -34,6 +34,7 @@ public class MSLoadingPlugin implements IFMLLoadingPlugin, IMixinConfigPlugin {
     public void injectData(Map<String, Object> data) {
         MixinBootstrap.init();
         Mixins.addConfiguration("mixins.modernsplash.json");
+        Mixins.addConfiguration("mixins.liteloader.json");
     }
 
     @Override

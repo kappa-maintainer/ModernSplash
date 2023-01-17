@@ -1,16 +1,12 @@
 {
-  "required": true,
+  "required": false,
   "package": "gkappa.modernsplash.mixin",
   "compatibilityLevel": "JAVA_8",
   "refmap": "mixins.modernsplash.refmap.json",
   "target": "@env(DEFAULT)",
-  "client": [
-    "MinecraftMixin",
-    "TextureUtilMixin"
-  ],
   "setSourceFile": true,
   "minVersion": "0.7.11",
   "mixins": [
-    "FMLClientHandlerMixin"
+    "LoadingBarMixin"
   ]
 }
