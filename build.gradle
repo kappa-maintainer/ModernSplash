@@ -21,6 +21,11 @@ buildscript {
             url 'https://maven.minecraftforge.net'
         }
         maven {
+            // GTNH ForgeGradle and ASM Fork
+            name = "GTNH Maven"
+            url = "http://jenkins.usrv.eu:8081/nexus/content/groups/public/"
+        }
+        maven {
             name 'sonatype'
             url 'https://oss.sonatype.org/content/repositories/snapshots/'
         }
@@ -28,13 +33,10 @@ buildscript {
             name 'Scala CI dependencies'
             url 'https://repo1.maven.org/maven2/'
         }
-        maven {
-            name 'jitpack'
-            url 'https://jitpack.io'
-        }
     }
     dependencies {
-        classpath 'com.github.GTNewHorizons:ForgeGradle:1.2.7'
+        classpath 'org.ow2.asm:asm-debug-all-custom:5.0.3'
+        classpath 'net.minecraftforge.gradle:ForgeGradle:1.2.13'
     }
 }
 
@@ -308,6 +310,7 @@ dependencies {
         }
         compile('com.github.GTNewHorizons:SpongeMixins:1.5.0')
     }
+    compile files('libs/*')
 }
 
 apply from: 'dependencies.gradle'
