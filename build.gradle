@@ -197,7 +197,7 @@ catch (Exception ignored) {
     versionOverride = 'NO-GIT-TAG-SET'
     identifiedVersion = versionOverride
 }
-version = minecraftVersion + '-' + '1.2.0' + identifiedVersion
+version = minecraftVersion + '-' + '1.2.0' + '-' + identifiedVersion
 ext {
     modVersion = identifiedVersion
 }
