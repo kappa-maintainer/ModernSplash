@@ -76,6 +76,12 @@ repositories {
     maven { url = 'https://sizableshrimp.me/maven' }
     maven { url = 'https://repo.spongepowered.org/maven' }
     maven { url = 'https://maven.cleanroommc.com' }
+    maven {
+        url 'https://cursemaven.com'
+        content {
+            includeGroup 'curse.maven'
+        }
+    }
 }
 
 dependencies {
@@ -92,9 +98,10 @@ dependencies {
         exclude module: "commons-io"
     }
 
-    compileOnly fg.deobf("zone.rong:mixinbooter:4.2")
+    compileOnly fg.deobf("zone.rong:mixinbooter:7.0")
+    runtimeOnly ("zone.rong:mixinbooter:7.0")
 
-    runtimeOnly ("zone.rong:mixinbooter:4.2")
+    compileOnly fg.deobf("curse.maven:smoothfont-285742:3944565")
 }
 
 fancyGradle {
