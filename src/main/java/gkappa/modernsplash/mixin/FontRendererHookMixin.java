@@ -1,7 +1,9 @@
 package gkappa.modernsplash.mixin;
 
 import bre.smoothfont.FontRendererHook;
+import bre.smoothfont.config.CommonConfig;
 import net.minecraft.client.gui.FontRenderer;
+import net.minecraftforge.client.model.SimpleModelFontRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -14,11 +16,15 @@ public class FontRendererHookMixin {
     public FontRenderer fontRenderer;
     @Shadow
     private void removeFontRendererHook() {}
-    @Inject(method = "initAfterConfigLoaded(Z)V", at = @At("HEAD"))
+    @Shadow
+    public boolean disableFeatures = true;
+    @Inject(method = "initAfterConfigLoaded(Z)V", at = @At("TAIL"))
     private void cancelSmoothFont(boolean deferredInit, CallbackInfo ci) {
         String cls = this.fontRenderer.getClass().getName();
-        if (cls.equals("gkappa.modernsplash.CustomSplash.SplashFontRenderer")) {
+        if (cls.equals("gkappa.modernsplash.CustomSplash$SplashFontRenderer")) {
             this.removeFontRendererHook();
+        } else if (CommonConfig.currentConfig.runMode == 0) {
+            this.disableFeatures = false;
         }
     }
 }

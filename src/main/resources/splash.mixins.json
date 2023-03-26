@@ -6,11 +6,9 @@
   "target": "@env(DEFAULT)",
   "client": [
     "MinecraftMixin",
-    "TextureUtilMixin"
+    "TextureUtilMixin",
+    "FMLClientHandlerMixin"
   ],
   "setSourceFile": true,
-  "minVersion": "0.8",
-  "mixins": [
-    "FontRendererHookMixin"
-  ]
+  "minVersion": "0.8"
 }
