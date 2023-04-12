@@ -18,7 +18,7 @@ public class FontRendererHookMixin {
     private void removeFontRendererHook() {}
     @Shadow
     public boolean disableFeatures = true;
-    @Inject(method = "initAfterConfigLoaded(Z)V", at = @At("TAIL"))
+    @Inject(method = "initAfterConfigLoaded(Z)V", at = @At("HEAD"))
     private void cancelSmoothFont(boolean deferredInit, CallbackInfo ci) {
         String cls = this.fontRenderer.getClass().getName();
         if (cls.equals("gkappa.modernsplash.CustomSplash$SplashFontRenderer")) {
