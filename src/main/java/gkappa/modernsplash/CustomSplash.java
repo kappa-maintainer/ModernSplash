@@ -651,16 +651,8 @@ public class CustomSplash
     public static int getMaxTextureSize()
     {
         if (max_texture_size != -1) return max_texture_size;
-        for (int i = 0x4000; i > 0; i >>= 1)
-        {
-            GlStateManager.glTexImage2D(GL_PROXY_TEXTURE_2D, 0, GL_RGBA, i, i, 0, GL_RGBA, GL_UNSIGNED_BYTE, null);
-            if (GlStateManager.glGetTexLevelParameteri(GL_PROXY_TEXTURE_2D, 0, GL_TEXTURE_WIDTH) != 0)
-            {
-                max_texture_size = i;
-                return i;
-            }
-        }
-        return -1;
+        max_texture_size = GL11.glGetInteger(GL11.GL_MAX_TEXTURE_SIZE);
+        return max_texture_size;
     }
 
     private static void checkThreadState()
