@@ -91,7 +91,7 @@ dependencies {
     annotationProcessor 'com.google.guava:guava:32.1.2-jre'
     annotationProcessor 'com.google.code.gson:gson:2.8.9'
 
-    runtimeOnly ("zone.rong:mixinbooter:9.1")
+    implementation "zone.rong:mixinbooter:9.1"
 
     compileOnly fg.deobf("curse.maven:smoothfont-285742:3944565")
 }
