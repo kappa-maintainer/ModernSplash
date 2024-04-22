@@ -9,13 +9,9 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '5.1.+', changing: true
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '6.0.+', changing: true
         classpath "org.spongepowered:mixingradle:0.7-SNAPSHOT"
     }
-}
-
-plugins {
-    id 'wtf.gofancy.fancygradle' version '1.+'
 }
 
 apply plugin: 'net.minecraftforge.gradle'
@@ -87,32 +83,18 @@ repositories {
 dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     
-    annotationProcessor("org.spongepowered:mixin:0.8.5:processor")
-    compileJar("org.spongepowered:mixin:0.8.5") {
-        exclude module: "asm-commons"
-        exclude module: "asm-tree"
-        exclude module: "launchwrapper"
-        exclude module: "guava"
-        exclude module: "log4j-core"
-        exclude module: "gson"
-        exclude module: "commons-io"
+    annotationProcessor("zone.rong:mixinbooter:9.1"){
+        transitive = false
     }
 
-    compileOnly fg.deobf("zone.rong:mixinbooter:7.0")
-    runtimeOnly ("zone.rong:mixinbooter:7.0")
+    annotationProcessor 'org.ow2.asm:asm-debug-all:5.2'
+    annotationProcessor 'com.google.guava:guava:32.1.2-jre'
+    annotationProcessor 'com.google.code.gson:gson:2.8.9'
+
+    runtimeOnly ("zone.rong:mixinbooter:9.1")
 
     compileOnly fg.deobf("curse.maven:smoothfont-285742:3944565")
 }
-
-fancyGradle {
-    patches {
-        resources
-        coremods
-        //codeChickenLib
-        asm
-    }
-}
-
 
 def resourceTargets = ['mcmod.info', 'pack.mcmeta']
 def intoTargets = ["$rootDir/out/production/resources/", "$rootDir/out/production/${project.name}.main/", "$rootDir/bin/main/"]

@@ -21,7 +21,6 @@ package gkappa.modernsplash;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.resources.*;
 import net.minecraft.crash.CrashReport;
@@ -51,6 +50,7 @@ import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.management.ManagementFactory;
 import java.nio.IntBuffer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Iterator;
@@ -67,7 +67,6 @@ import static org.lwjgl.opengl.GL12.GL_UNSIGNED_INT_8_8_8_8_REV;
  * Not a fully fleshed out API, may change in future MC versions.
  * However feel free to use and suggest additions.
  */
-@SuppressWarnings("serial")
 public class CustomSplash
 {
     private static Drawable d;
@@ -220,7 +219,7 @@ public class CustomSplash
 
         File miscPackFile = new File(Minecraft.getMinecraft().gameDir, getString("resourcePackPath", "resources"));
 
-        try (Writer w = new OutputStreamWriter(new FileOutputStream(configFile), StandardCharsets.UTF_8))
+        try (Writer w = new OutputStreamWriter(Files.newOutputStream(configFile.toPath()), StandardCharsets.UTF_8))
         {
             config.store(w, "Splash screen properties");
         }
@@ -238,10 +237,14 @@ public class CustomSplash
             @Override
             public String call() throws Exception
             {
-                return "' Vendor: '" + glGetString(GL_VENDOR) +
-                        "' Version: '" + glGetString(GL_VERSION) +
-                        "' Renderer: '" + glGetString(GL_RENDERER) +
-                        "'";
+                if (Minecraft.getMinecraft().isCallingFromMinecraftThread())
+                {
+                    return "' Vendor: '" + glGetString(GL_VENDOR) +
+                            "' Version: '" + glGetString(GL_VERSION) +
+                            "' Renderer: '" + glGetString(GL_RENDERER) +
+                            "'";
+                }
+                return "No OpenGL context found in the current thread: " + Thread.currentThread().getName();
             }
 
             @Override
@@ -345,7 +348,7 @@ public class CustomSplash
                     if(enableTimer) {
                         glPushMatrix();
                         setColor(fontColor);
-                        glTranslatef(320 - Display.getWidth() / 2 + 4, 240 + Display.getHeight() / 2 - textHeight2, 0);
+                        glTranslatef(320 - (float) Display.getWidth() / 2 + 4, 240 + (float) Display.getHeight() / 2 - textHeight2, 0);
                         glScalef(2, 2, 1);
                         glEnable(GL_TEXTURE_2D);
                         String renderString = getString();
@@ -436,7 +439,7 @@ public class CustomSplash
                             isDisplayVSyncForced = true;
                             FMLLog.log.info("Using alternative sync timing : {} frames of Display.update took {} nanos", TIMING_FRAME_COUNT, updateTiming);
                         }
-                        try { Thread.sleep(16); } catch (InterruptedException ie) {}
+                        try { Thread.sleep(16); } catch (InterruptedException ignored) {}
                     } else
                     {
                         if (framecount ==TIMING_FRAME_COUNT) {
@@ -566,7 +569,7 @@ public class CustomSplash
                 if(showTotalMemoryLine) {
                     setColor(memoryLowColor);
                     glPushMatrix();
-                    glTranslatef((barWidth - 8) * (totalMemory) / (maxMemory) - 2, 2, 0);
+                    glTranslatef((float) ((barWidth - 8) * (totalMemory)) / (maxMemory) - 2, 2, 0);
                     drawBox(2, barHeight - 8);
                     glPopMatrix();
                 }
@@ -651,7 +654,7 @@ public class CustomSplash
     public static int getMaxTextureSize()
     {
         if (max_texture_size != -1) return max_texture_size;
-        max_texture_size = GL11.glGetInteger(GL11.GL_MAX_TEXTURE_SIZE);
+        max_texture_size = glGetInteger(GL_MAX_TEXTURE_SIZE);
         return max_texture_size;
     }
 
@@ -731,7 +734,7 @@ public class CustomSplash
         }
     }
 
-    private static boolean disableSplash(Exception e)
+    private static void disableSplash(Exception e)
     {
         if (disableSplash())
         {
@@ -773,7 +776,7 @@ public class CustomSplash
         enabled = false;
         config.setProperty("enabled", "false");
 
-        try (Writer w = new OutputStreamWriter(new FileOutputStream(configFile), StandardCharsets.UTF_8))
+        try (Writer w = new OutputStreamWriter(Files.newOutputStream(configFile.toPath()), StandardCharsets.UTF_8))
         {
             config.store(w, "Splash screen properties");
         }
