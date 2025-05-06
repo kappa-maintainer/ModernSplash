@@ -1,8 +1,6 @@
 package gkappa.modernsplash;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.launchwrapper.Launch;
-import net.minecraftforge.fml.common.FMLLog;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -13,7 +11,7 @@ import java.util.Queue;
 
 public class TimeHistory {
     private static Properties config;
-    private static File configFile = new File(Launch.minecraftHome, "config/time.history");;
+    private static final File configFile = new File(Launch.minecraftHome, "config/time.history");;
     private static final Queue<Long> queue = new LinkedList<>();
     public static long getEstimateTime() {
 

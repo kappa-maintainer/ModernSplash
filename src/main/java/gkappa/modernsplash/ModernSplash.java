@@ -20,8 +20,7 @@ import java.lang.management.ManagementFactory;
         modid = Reference.MOD_ID,
         name = Reference.MOD_NAME,
         useMetadata = true,
-        version = Reference.MOD_VERSION,
-        dependencies = Reference.MOD_DEPENDENCIES,
+        version = Reference.VERSION,
         clientSideOnly = true
 )
 public class ModernSplash {
@@ -60,7 +59,7 @@ public class ModernSplash {
             }
 
             startupTime = ManagementFactory.getRuntimeMXBean().getUptime();
-            LOGGER.info("Startup took " + startupTime + "ms.");
+            LOGGER.info("Startup took {}ms.", startupTime);
 
             doneTime = startupTime;
 
@@ -70,11 +69,10 @@ public class ModernSplash {
 
     @SubscribeEvent
     public void onGuiDraw(GuiScreenEvent.DrawScreenEvent event){
-        if(!hasLeftMainMenu && CustomSplash.enableTimer && event.getGui() instanceof GuiMainMenu){
+        if(!hasLeftMainMenu && CustomSplash.enableTimer && event.getGui() instanceof GuiMainMenu mainMenu){
             hasBeenMainMenu = true;
 
             if(CustomSplash.displayStartupTimeOnMainMenu) {
-                GuiMainMenu mainMenu = (GuiMainMenu)event.getGui();
                 long minutes = (startupTime / 1000) / 60;
                 long seconds = (startupTime / 1000) % 60;
 

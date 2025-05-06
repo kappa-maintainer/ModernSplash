@@ -26,6 +26,7 @@ import net.minecraft.client.resources.*;
 import net.minecraft.crash.CrashReport;
 import net.minecraft.launchwrapper.Launch;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.common.config.Configuration;
 import net.minecraftforge.fml.client.FMLClientHandler;
 import net.minecraftforge.fml.common.*;
 import net.minecraftforge.fml.common.ProgressManager.ProgressBar;
@@ -49,12 +50,9 @@ import java.io.*;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.management.ManagementFactory;
 import java.nio.IntBuffer;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Iterator;
-import java.util.Properties;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -86,7 +84,9 @@ public class CustomSplash
     private static Texture logoTexture;
     private static Texture forgeTexture;
 
-    private static Properties config;
+    private static final File configFile = new File(new File(Launch.minecraftHome, "config"), "modern_splash.cfg");
+    private static final Configuration config = new Configuration(configFile);
+    private static final String categoryGeneral = "General";
 
     private static boolean enabled;
     private static boolean forgeLogo;
@@ -113,30 +113,6 @@ public class CustomSplash
 
     public static final Semaphore mutex = new Semaphore(1);
 
-    private static String getString(String name, String def)
-    {
-        String value = config.getProperty(name, def);
-        config.setProperty(name, value);
-        return value;
-    }
-
-
-
-    private static boolean getBool(String name, boolean def)
-    {
-        return Boolean.parseBoolean(getString(name, Boolean.toString(def)));
-    }
-
-    private static int getInt(String name, int def)
-    {
-        return Integer.decode(getString(name, Integer.toString(def)));
-    }
-
-    private static int getHex(String name, int def)
-    {
-        return Integer.decode(getString(name, "0x" + Integer.toString(def, 16).toUpperCase()));
-    }
-
     public static void start()
     {
         File configFile = new File(Minecraft.getMinecraft().gameDir, "config/splash.properties");
@@ -144,16 +120,6 @@ public class CustomSplash
         File parent = configFile.getParentFile();
         if (!parent.exists())
             parent.mkdirs();
-
-        config = new Properties();
-        try (Reader r = new InputStreamReader(new FileInputStream(configFile), StandardCharsets.UTF_8))
-        {
-            config.load(r);
-        }
-        catch(IOException e)
-        {
-            FMLLog.log.info("Could not load splash.properties, will create a default one");
-        }
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HHmm");
         int now = Integer.parseInt(formatter.format(LocalDateTime.now()));
@@ -164,41 +130,41 @@ public class CustomSplash
 
         // Enable if we have the flag, and there's either no optifine, or optifine has added a key to the blackboard ("optifine.ForgeSplashCompatible")
         // Optifine authors - add this key to the blackboard if you feel your modifications are now compatible with this code.
-        enabled =             getBool("enabled",      defaultEnabled) && ( (!FMLClientHandler.instance().hasOptifine()) || Launch.blackboard.containsKey("optifine.ForgeSplashCompatible"));
-        forgeLogo =           getBool("forgeLogo",           false);
-        rotate =              getBool("rotate",              false);
-        showMemory =          getBool("showMemory",           true);
-        showTotalMemoryLine = getBool("showTotalMemoryLine", false);
-        enableTimer =         getBool("enableTimer",          true);
+        enabled = config.getBoolean("enabled", categoryGeneral, defaultEnabled, "Set this to false if you want Vanilla splash") && ( (!FMLClientHandler.instance().hasOptifine()) || Launch.blackboard.containsKey("optifine.ForgeSplashCompatible"));
+        forgeLogo = config.getBoolean("forgeLogo", categoryGeneral, false, "True to show Forge smashing animation");
+        rotate =  config.getBoolean("rotate", categoryGeneral, false, "Rotate Forge logo");
+        showMemory = config.getBoolean("showMemory", categoryGeneral, true, "If show realtime heap memory");
+        showTotalMemoryLine = config.getBoolean("showTotalMemoryLine", categoryGeneral, false, "If show total JVM allocated memory");
+        enableTimer = config.getBoolean("enableTimer", categoryGeneral, true, "If enable launch timer");
 
-        logoOffset =         getInt("logoOffset",    0);
+        logoOffset =         config.getInt("logoOffset", categoryGeneral, 0, -10000, 10000, "Forge logo offset");
 
-        backgroundColor =    getHex("background",    0xEF323D);
-        fontColor =          getHex("font",          0xFFFFFF);
-        logoColor =          getHex("logo",          0xFFFFFF);
-        barBorderColor =     getHex("barBorder",     0xFFFFFF);
-        barColor =           getHex("bar",           0xFFFFFF);
-        barBackgroundColor = getHex("barBackground", 0xEF323D);
-        memoryGoodColor =    getHex("memoryGood",    0xFFFFFF);
-        memoryWarnColor =    getHex("memoryWarn",    0xFFFFFF);
-        memoryLowColor =     getHex("memoryLow",     0xFFFFFF);
+        backgroundColor = Integer.decode(config.getString("background", categoryGeneral, "0xEF323D", "Background color"));
+        fontColor = Integer.decode(config.getString("font", categoryGeneral, "0xFFFFFF", "Font color"));
+        logoColor = Integer.decode(config.getString("logo", categoryGeneral, "0xFFFFFF", "Logo color"));
+        barBorderColor = Integer.decode(config.getString("barBorder", categoryGeneral, "0xFFFFFF", "Bar border color"));
+        barColor = Integer.decode(config.getString("bar", categoryGeneral, "0xFFFFFF", "Bar color"));
+        barBackgroundColor = Integer.decode(config.getString("barBackground", categoryGeneral, "0xEF323D", "Bar background color"));
+        memoryGoodColor = Integer.decode(config.getString("memoryGood", categoryGeneral, "0xFFFFFF", "Healthy memory color"));
+        memoryWarnColor = Integer.decode(config.getString("memoryWarn", categoryGeneral, "0xFFFFFF", "Warning memory color"));
+        memoryLowColor = Integer.decode(config.getString("memoryLow", categoryGeneral, "0xFFFFFF", "Low memory color"));
 
-        displayStartupTimeOnMainMenu = getBool("timeOnMainMenu", true);
+        displayStartupTimeOnMainMenu = config.getBoolean("timeOnMainMenu",categoryGeneral, true, "Show launch time on main menu");
 
-        boolean darkModeOnly = getBool("darkModeOnly", false);
+        boolean darkModeOnly = config.getBoolean("darkModeOnly", categoryGeneral, false, "Force dark mode");
 
-        int darkStartTime = getInt("darkStartTime", 2300);
-        int darkEndTime =   getInt("darkEndTime", 600);
+        int darkStartTime = config.getInt("darkStartTime", categoryGeneral, 2300, 0, 2400, "Start time of dark mode period, default to 23:00");
+        int darkEndTime =   config.getInt("darkEndTime", categoryGeneral, 600, 0, 2400, "End time of dark mode period, default to 06:00");
 
-        int backgroundColorNight =    getHex("backgroundDark",    0x202020);
-        int fontColorNight =          getHex("fontDark",          0x606060);
-        int logoColorNight =          getHex("logoDark",          0x999999);
-        int barBorderColorNight =     getHex("barBorderDark",     0x4E4E4E);
-        int barColorNight =           getHex("barDark",           0x4E4E4E);
-        int barBackgroundColorNight = getHex("barBackgroundDark", 0x202020);
-        int memoryGoodColorNight =    getHex("memoryGoodDark",    0x4E4E4E);
-        int memoryWarnColorNight =    getHex("memoryWarnDark",    0x4E4E4E);
-        int memoryLowColorNight =     getHex("memoryLowDark",     0x4E4E4E);
+        int backgroundColorNight = Integer.decode(config.getString("backgroundDark", categoryGeneral, "0x202020", "Background color in dark mode"));
+        int fontColorNight = Integer.decode(config.getString("fontDark", categoryGeneral, "0x606060", "Font color in dark mode"));
+        int logoColorNight = Integer.decode(config.getString("logoDark", categoryGeneral, "0x999999", "Logo color in dark mode"));
+        int barBorderColorNight = Integer.decode(config.getString("barBorderDark", categoryGeneral, "0x4E4E4E", "Bar border color in dark mode"));
+        int barColorNight = Integer.decode(config.getString("barDark", categoryGeneral, "0x4E4E4E", "Bar color in dark mode"));
+        int barBackgroundColorNight = Integer.decode(config.getString("barBackgroundDark", categoryGeneral, "0x202020", "Bar background color in dark mode"));
+        int memoryGoodColorNight = Integer.decode(config.getString("memoryGoodDark", categoryGeneral, "0x4E4E4E", "Healthy memory color in dark mode"));
+        int memoryWarnColorNight = Integer.decode(config.getString("memoryWarnDark", categoryGeneral, "0x4E4E4E", "Warning memory color in dark mode"));
+        int memoryLowColorNight = Integer.decode(config.getString("memoryLowDark", categoryGeneral, "0x4E4E4E", "Low memory color in dark mode"));
 
         if(darkModeOnly || (darkEndTime >= darkStartTime ? (now >= darkStartTime && now < darkEndTime) : (now >= darkStartTime || now <= darkEndTime))) {
             backgroundColor    = backgroundColorNight;
@@ -212,20 +178,15 @@ public class CustomSplash
             memoryLowColor     = memoryLowColorNight;
         }
 
-        final ResourceLocation fontLoc = new ResourceLocation(getString("fontTexture", "textures/font/ascii.png"));
-        final ResourceLocation logoLoc = new ResourceLocation(getString("logoTexture", "modernsplash:textures/gui/title/mojang.png"));
-        final ResourceLocation forgeLoc = new ResourceLocation(getString("forgeTexture", "fml:textures/gui/forge.png"));
+        final ResourceLocation fontLoc = new ResourceLocation(config.getString("fontTexture", categoryGeneral, "textures/font/ascii.png", "Resource location of font"));
+        final ResourceLocation logoLoc = new ResourceLocation(config.getString("logoTexture", categoryGeneral, "modernsplash:textures/gui/title/mojang.png", "Resource location of main logo"));
+        final ResourceLocation forgeLoc = new ResourceLocation(config.getString("forgeTexture", categoryGeneral, "fml:textures/gui/forge.png", "Resource location of Forge logo"));
         final ResourceLocation forgeFallbackLoc = new ResourceLocation("fml:textures/gui/forge.png");
 
-        File miscPackFile = new File(Minecraft.getMinecraft().gameDir, getString("resourcePackPath", "resources"));
+        File miscPackFile = new File(Minecraft.getMinecraft().gameDir, config.getString("resourcePackPath", categoryGeneral, "resources", "Resource pack path relative to game dir"));
 
-        try (Writer w = new OutputStreamWriter(Files.newOutputStream(configFile.toPath()), StandardCharsets.UTF_8))
-        {
-            config.store(w, "Splash screen properties");
-        }
-        catch(IOException e)
-        {
-            FMLLog.log.error("Could not save the splash.properties file", e);
+        if (config.hasChanged()) {
+            config.save();
         }
 
         miscPack = createResourcePack(miscPackFile);
@@ -768,23 +729,10 @@ public class CustomSplash
 
     private static boolean disableSplash()
     {
-        File configFile = new File(Minecraft.getMinecraft().gameDir, "config/splash.properties");
-        File parent = configFile.getParentFile();
-        if (!parent.exists())
-            parent.mkdirs();
 
         enabled = false;
-        config.setProperty("enabled", "false");
-
-        try (Writer w = new OutputStreamWriter(Files.newOutputStream(configFile.toPath()), StandardCharsets.UTF_8))
-        {
-            config.store(w, "Splash screen properties");
-        }
-        catch(IOException e)
-        {
-            FMLLog.log.error("Could not save the splash.properties file", e);
-            return false;
-        }
+        config.getBoolean("enabled", categoryGeneral, false, "Set this to false if you want Vanilla splash");
+        config.save();
         return true;
     }
 

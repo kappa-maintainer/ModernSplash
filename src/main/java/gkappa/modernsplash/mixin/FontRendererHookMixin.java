@@ -3,7 +3,6 @@ package gkappa.modernsplash.mixin;
 import bre.smoothfont.FontRendererHook;
 import bre.smoothfont.config.CommonConfig;
 import net.minecraft.client.gui.FontRenderer;
-import net.minecraftforge.client.model.SimpleModelFontRenderer;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;

@@ -13,7 +13,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class MSLoadingPlugin implements IFMLLoadingPlugin, IEarlyMixinLoader {
+public class MSLoadingPlugin implements IFMLLoadingPlugin {
 
     public static long expectedTime = 0;
 
@@ -47,23 +47,4 @@ public class MSLoadingPlugin implements IFMLLoadingPlugin, IEarlyMixinLoader {
         return null;
     }
 
-
-    @Override
-    public List<String> getMixinConfigs() {
-        return Arrays.asList( "splash.mixins.json", "smoothfont.mixins.json" );
-    }
-
-    @Override
-    public boolean shouldMixinConfigQueue(String mixinConfig) {
-        if(mixinConfig.equals("splash.mixins.json")) return true;
-        boolean sfLoaded = true;
-        try {
-            Class.forName("bre.smoothfont.mod_SmoothFont");
-        } catch (Throwable ignored) {
-            sfLoaded = false;
-        }
-        ModernSplash.LOGGER.info("Found SmoothFont: " + sfLoaded);
-        if(mixinConfig.equals("smoothfont.mixins.json")) return sfLoaded;
-        return IEarlyMixinLoader.super.shouldMixinConfigQueue(mixinConfig);
-    }
 }
