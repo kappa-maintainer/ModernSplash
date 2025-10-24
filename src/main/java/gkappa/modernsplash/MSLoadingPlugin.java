@@ -1,28 +1,31 @@
 package gkappa.modernsplash;
 
-import cpw.mods.fml.relauncher.FMLLaunchHandler;
-import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
-import cpw.mods.fml.relauncher.Side;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.Nullable;
+
 import org.spongepowered.asm.launch.MixinBootstrap;
 import org.spongepowered.asm.lib.tree.ClassNode;
 import org.spongepowered.asm.mixin.Mixins;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 
-import javax.annotation.Nullable;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import cpw.mods.fml.relauncher.FMLLaunchHandler;
+import cpw.mods.fml.relauncher.IFMLLoadingPlugin;
+import cpw.mods.fml.relauncher.Side;
 
 public class MSLoadingPlugin implements IFMLLoadingPlugin, IMixinConfigPlugin {
+
     public static long expectedTime = 0;
 
-    public  MSLoadingPlugin() {
-        if(FMLLaunchHandler.side() == Side.CLIENT) {
+    public MSLoadingPlugin() {
+        if (FMLLaunchHandler.side() == Side.CLIENT) {
             expectedTime = TimeHistory.getEstimateTime();
         }
     }
+
     @Override
     public String[] getASMTransformerClass() {
         return new String[0];
@@ -43,7 +46,6 @@ public class MSLoadingPlugin implements IFMLLoadingPlugin, IMixinConfigPlugin {
     public void injectData(Map<String, Object> data) {
         MixinBootstrap.init();
         Mixins.addConfiguration("mixins.modernsplash.json");
-        Mixins.addConfiguration("mixins.liteloader.json");
     }
 
     @Override
@@ -87,14 +89,14 @@ public class MSLoadingPlugin implements IFMLLoadingPlugin, IMixinConfigPlugin {
     }
 
     /*
-    @Override
-    public List<String> getMixinConfigs() {
-        return Collections.singletonList("splash.mixins.json");
-    }
-
-    @Override
-    public boolean shouldMixinConfigQueue(String mixinConfig) {
-        if(mixinConfig.equals("splash.mixins.json")) return true;
-        return IEarlyMixinLoader.super.shouldMixinConfigQueue(mixinConfig);
-    }*/
+     * @Override
+     * public List<String> getMixinConfigs() {
+     * return Collections.singletonList("splash.mixins.json");
+     * }
+     * @Override
+     * public boolean shouldMixinConfigQueue(String mixinConfig) {
+     * if(mixinConfig.equals("splash.mixins.json")) return true;
+     * return IEarlyMixinLoader.super.shouldMixinConfigQueue(mixinConfig);
+     * }
+     */
 }
