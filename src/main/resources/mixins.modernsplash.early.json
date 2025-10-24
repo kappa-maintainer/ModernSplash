@@ -1,11 +1,8 @@
 {
   "required": true,
   "minVersion": "0.8.5-GTNH",
-  "package": "gkappa.modernsplash.mixin",
+  "package": "gkappa.modernsplash.mixin.early",
   "refmap": "mixins.modernsplash.refmap.json",
   "target": "@env(DEFAULT)",
-  "compatibilityLevel": "JAVA_8",
-  "overwrites": {
-    "conformVisibility": true
-  }
+  "compatibilityLevel": "JAVA_8"
 }

@@ -1,4 +1,4 @@
-package gkappa.modernsplash.mixin;
+package gkappa.modernsplash.mixin.early;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureManager;

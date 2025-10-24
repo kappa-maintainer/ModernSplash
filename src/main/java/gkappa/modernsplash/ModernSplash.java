@@ -16,6 +16,9 @@ import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.Mod.Instance;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
+import cpw.mods.fml.relauncher.FMLLaunchHandler;
+import cpw.mods.fml.relauncher.Side;
+import cpw.mods.fml.relauncher.SideOnly;
 
 @Mod(
     modid = Reference.MOD_ID,
@@ -39,15 +42,20 @@ public class ModernSplash {
     public static ModernSplash _instance;
 
     public ModernSplash() {
-        trueFullscreen = Minecraft.getMinecraft().gameSettings.fullScreen;
-        Minecraft.getMinecraft().gameSettings.fullScreen = false;
+        if (FMLLaunchHandler.side()
+            .isClient()) {
+            trueFullscreen = Minecraft.getMinecraft().gameSettings.fullScreen;
+            Minecraft.getMinecraft().gameSettings.fullScreen = false;
+        }
     }
 
+    @SideOnly(Side.CLIENT)
     @Mod.EventHandler
     public void preinit(FMLPreInitializationEvent event) {
         MinecraftForge.EVENT_BUS.register(this);
     }
 
+    @SideOnly(Side.CLIENT)
     @SubscribeEvent
     public void onGuiOpen(GuiOpenEvent event) {
         if (!triggered && CustomSplash.enableTimer && event.gui instanceof GuiMainMenu) {
@@ -72,6 +80,7 @@ public class ModernSplash {
         }
     }
 
+    @SideOnly(Side.CLIENT)
     @SubscribeEvent
     public void onGuiDraw(GuiScreenEvent.DrawScreenEvent event) {
         if (!hasLeftMainMenu && CustomSplash.enableTimer && event.gui instanceof GuiMainMenu) {

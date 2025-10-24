@@ -1,4 +1,4 @@
-package gkappa.modernsplash.mixin;
+package gkappa.modernsplash.mixin.early;
 
 import java.util.concurrent.Semaphore;
 
