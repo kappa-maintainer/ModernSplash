@@ -1,0 +1,13 @@
+
+name: Build and test
+
+on:
+  pull_request:
+    branches: [ master, main, 1.7.10 ]
+  push:
+    branches: [ master, main, 1.7.10 ]
+
+jobs:
+  build-and-test:
+    uses: GTNewHorizons/GTNH-Actions-Workflows/.github/workflows/build-and-test.yml@master
+    secrets: inherit
