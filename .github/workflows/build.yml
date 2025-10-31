@@ -1,0 +1,31 @@
+name: Build mod jar
+
+on:
+  [workflow_dispatch, push]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4.2.2
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4.7.0
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+    - name: Add permission
+      run: chmod +x ./gradlew
+    - name: Setup
+      run: ./gradlew setupDecompWorkspace
+    - name: Execute Gradle build
+      run: ./gradlew build
+        
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v4.6.2
+      with:
+        path: build/libs
