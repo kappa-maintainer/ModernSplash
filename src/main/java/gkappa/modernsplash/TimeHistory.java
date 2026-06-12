@@ -17,7 +17,7 @@ import net.minecraft.launchwrapper.Launch;
 public class TimeHistory {
 
     private static Properties config;
-    private static File configFile = new File(Launch.minecraftHome, "config/time.history");;
+    private static final File configFile = new File(Launch.minecraftHome, "config/time.history");;
     private static final Queue<Long> queue = new LinkedList<>();
 
     public static long getEstimateTime() {

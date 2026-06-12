@@ -56,10 +56,6 @@ import cpw.mods.fml.common.ProgressManager;
 import cpw.mods.fml.common.ProgressManager.ProgressBar;
 import cpw.mods.fml.common.asm.FMLSanityChecker;
 
-/**
- * @deprecated not a stable API, will break, don't use this yet
- */
-
 public class CustomSplash {
 
     private static Drawable d;
@@ -601,7 +597,7 @@ public class CustomSplash {
      * Call before you need to explicitly modify GL context state during loading.
      * Resource loading doesn't usually require this call.
      * Call {@link #resume()} when you're done.
-     * 
+     *
      * @deprecated not a stable API, will break, don't use this yet
      */
     @Deprecated

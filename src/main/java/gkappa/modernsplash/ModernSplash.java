@@ -20,12 +20,7 @@ import cpw.mods.fml.relauncher.FMLLaunchHandler;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 
-@Mod(
-    modid = Reference.MOD_ID,
-    name = Reference.MOD_NAME,
-    useMetadata = true,
-    version = Reference.MOD_VERSION,
-    dependencies = Reference.MOD_DEPENDENCIES)
+@Mod(modid = Reference.MOD_ID, name = Reference.MOD_NAME, useMetadata = true, version = Tags.VERSION)
 public class ModernSplash {
 
     public static Logger LOGGER = LogManager.getLogger("ModernSplash");
