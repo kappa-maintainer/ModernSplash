@@ -53,7 +53,7 @@ public class ModernSplash {
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
     public void onGuiOpen(GuiOpenEvent event) {
-        if (!triggered && CustomSplash.enableTimer && event.gui instanceof GuiMainMenu) {
+        if (!triggered && Config.enableTimer && event.gui instanceof GuiMainMenu) {
             triggered = true;
 
             Minecraft.getMinecraft().gameSettings.fullScreen = trueFullscreen;
@@ -78,10 +78,10 @@ public class ModernSplash {
     @SideOnly(Side.CLIENT)
     @SubscribeEvent
     public void onGuiDraw(GuiScreenEvent.DrawScreenEvent event) {
-        if (!hasLeftMainMenu && CustomSplash.enableTimer && event.gui instanceof GuiMainMenu) {
+        if (!hasLeftMainMenu && Config.enableTimer && event.gui instanceof GuiMainMenu) {
             hasBeenMainMenu = true;
 
-            if (CustomSplash.displayStartupTimeOnMainMenu) {
+            if (Config.displayStartupTimeOnMainMenu) {
                 GuiMainMenu mainMenu = (GuiMainMenu) event.gui;
                 long minutes = (startupTime / 1000) / 60;
                 long seconds = (startupTime / 1000) % 60;

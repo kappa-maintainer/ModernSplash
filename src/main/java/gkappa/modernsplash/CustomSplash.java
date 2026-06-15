@@ -5,8 +5,6 @@ import static org.lwjgl.opengl.GL12.*;
 
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -14,10 +12,7 @@ import java.io.PrintWriter;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.management.ManagementFactory;
 import java.nio.IntBuffer;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.Iterator;
-import java.util.Properties;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -33,7 +28,6 @@ import net.minecraft.client.resources.FileResourcePack;
 import net.minecraft.client.resources.FolderResourcePack;
 import net.minecraft.client.resources.IResourcePack;
 import net.minecraft.crash.CrashReport;
-import net.minecraft.launchwrapper.Launch;
 import net.minecraft.util.ResourceLocation;
 
 import org.apache.commons.io.IOUtils;
@@ -47,7 +41,6 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.SharedDrawable;
 import org.lwjgl.util.glu.GLU;
 
-import cpw.mods.fml.client.FMLClientHandler;
 import cpw.mods.fml.common.EnhancedRuntimeException;
 import cpw.mods.fml.common.FMLCommonHandler;
 import cpw.mods.fml.common.FMLLog;
@@ -75,140 +68,18 @@ public class CustomSplash {
     private static Texture logoTexture;
     private static Texture forgeTexture;
 
-    private static Properties config;
-
-    private static boolean enabled;
-    private static boolean forgeLogo;
-    private static boolean rotate;
-    private static int logoOffset;
-    private static int backgroundColor;
-    private static int fontColor;
-    private static int logoColor;
-    private static int barBorderColor;
-    private static int barColor;
-    private static int barBackgroundColor;
-    private static boolean showMemory;
-    private static boolean showTotalMemoryLine;
-
-    public static boolean displayStartupTimeOnMainMenu = true;
-    public static boolean enableTimer = true;
-    private static int memoryGoodColor;
-    private static int memoryWarnColor;
-    private static int memoryLowColor;
     private static float memoryColorPercent;
     private static long memoryColorChangeTime;
     public static final Semaphore mutex = new Semaphore(1);
 
-    private static String getString(String name, String def) {
-        String value = config.getProperty(name, def);
-        config.setProperty(name, value);
-        return value;
-    }
-
-    private static boolean getBool(String name, boolean def) {
-        return Boolean.parseBoolean(getString(name, Boolean.toString(def)));
-    }
-
-    private static int getInt(String name, int def) {
-        return Integer.decode(getString(name, Integer.toString(def)));
-    }
-
-    private static int getHex(String name, int def) {
-        return Integer.decode(
-            getString(
-                name,
-                "0x" + Integer.toString(def, 16)
-                    .toUpperCase()));
-    }
-
     public static void start() {
-        File configFile = new File(Minecraft.getMinecraft().mcDataDir, "config/splash.properties");
-        FileReader r = null;
-        config = new Properties();
-        try {
-            r = new FileReader(configFile);
-            config.load(r);
-        } catch (IOException e) {
-            FMLLog.info("Could not load splash.properties, will create a default one");
-        } finally {
-            IOUtils.closeQuietly(r);
-        }
+        Config.load();
 
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HHmm");
-        int now = Integer.parseInt(formatter.format(LocalDateTime.now()));
-
-        // Enable if we have the flag, and there's either no optifine, or optifine has added a key to the blackboard
-        // ("optifine.ForgeSplashCompatible")
-        // Optifine authors - add this key to the blackboard if you feel your modifications are now compatible with this
-        // code.
-        enabled = getBool("enabled", true) && ((!FMLClientHandler.instance()
-            .hasOptifine()) || Launch.blackboard.containsKey("optifine.ForgeSplashCompatible"));
-        rotate = getBool("rotate", false);
-        forgeLogo = getBool("forgeLogo", false);
-        showMemory = getBool("showMemory", true);
-        showTotalMemoryLine = getBool("showTotalMemoryLine", false);
-        enableTimer = getBool("enableTimer", true);
-
-        logoOffset = getInt("logoOffset", 0);
-
-        backgroundColor = getHex("background", 0xEF323D);
-        fontColor = getHex("font", 0xFFFFFF);
-        logoColor = getHex("logo", 0xFFFFFF);
-        barBorderColor = getHex("barBorder", 0xFFFFFF);
-        barColor = getHex("bar", 0xFFFFFF);
-        barBackgroundColor = getHex("barBackground", 0xEF323D);
-        memoryGoodColor = getHex("memoryGood", 0xFFFFFF);
-        memoryWarnColor = getHex("memoryWarn", 0xFFFFFF);
-        memoryLowColor = getHex("memoryLow", 0xFFFFFF);
-
-        displayStartupTimeOnMainMenu = getBool("timeOnMainMenu", true);
-
-        boolean darkModeOnly = getBool("darkModeOnly", false);
-
-        int darkStartTime = getInt("darkStartTime", 2300);
-        int darkEndTime = getInt("darkEndTime", 600);
-
-        int backgroundColorNight = getHex("backgroundDark", 0x202020);
-        int fontColorNight = getHex("fontDark", 0x606060);
-        int logoColorNight = getHex("logoDark", 0x999999);
-        int barBorderColorNight = getHex("barBorderDark", 0x4E4E4E);
-        int barColorNight = getHex("barDark", 0x4E4E4E);
-        int barBackgroundColorNight = getHex("barBackgroundDark", 0x202020);
-        int memoryGoodColorNight = getHex("memoryGoodDark", 0x4E4E4E);
-        int memoryWarnColorNight = getHex("memoryWarnDark", 0x4E4E4E);
-        int memoryLowColorNight = getHex("memoryLowDark", 0x4E4E4E);
-
-        if (darkModeOnly || (darkEndTime >= darkStartTime ? (now >= darkStartTime && now < darkEndTime)
-            : (now >= darkStartTime || now <= darkEndTime))) {
-            backgroundColor = backgroundColorNight;
-            fontColor = fontColorNight;
-            logoColor = logoColorNight;
-            barBorderColor = barBorderColorNight;
-            barColor = barColorNight;
-            barBackgroundColor = barBackgroundColorNight;
-            memoryGoodColor = memoryGoodColorNight;
-            memoryWarnColor = memoryWarnColorNight;
-            memoryLowColor = memoryLowColorNight;
-        }
-        final ResourceLocation fontLoc = new ResourceLocation(getString("fontTexture", "textures/font/ascii.png"));
         final ResourceLocation logoLoc = new ResourceLocation("modernsplash:textures/gui/title/mojang.png");
-        final ResourceLocation forgeLoc = new ResourceLocation(getString("forgeTexture", "fml:textures/gui/forge.gif"));
 
-        File miscPackFile = new File(Minecraft.getMinecraft().mcDataDir, getString("resourcePackPath", "resources"));
+        miscPack = createResourcePack(Config.miscPackFile);
 
-        FileWriter w = null;
-        try {
-            w = new FileWriter(configFile);
-            config.store(w, "Splash screen properties");
-        } catch (IOException e) {
-            FMLLog.log(Level.ERROR, e, "Could not save the splash.properties file");
-        } finally {
-            IOUtils.closeQuietly(w);
-        }
-
-        miscPack = createResourcePack(miscPackFile);
-
-        if (!enabled) return;
+        if (!Config.enabled) return;
         // getting debug info out of the way, while we still can
         FMLCommonHandler.instance()
             .registerCrashCallable(new ICrashCallable() {
@@ -264,9 +135,9 @@ public class CustomSplash {
 
             public void run() {
                 setGL();
-                fontTexture = new Texture(fontLoc);
+                fontTexture = new Texture(Config.fontLoc);
                 logoTexture = new Texture(logoLoc);
-                forgeTexture = new Texture(forgeLoc);
+                forgeTexture = new Texture(Config.forgeLoc);
                 glEnable(GL_TEXTURE_2D);
                 fontRenderer = new SplashFontRenderer();
                 glDisable(GL_TEXTURE_2D);
@@ -294,7 +165,7 @@ public class CustomSplash {
                     glLoadIdentity();
 
                     // mojang logo
-                    setColor(logoColor);
+                    setColor(Config.logoColor);
                     glEnable(GL_TEXTURE_2D);
                     logoTexture.bind();
                     glBegin(GL_QUADS);
@@ -309,7 +180,7 @@ public class CustomSplash {
                     glEnd();
                     glDisable(GL_TEXTURE_2D);
 
-                    if (showMemory) {
+                    if (Config.showMemory) {
                         glPushMatrix();
                         glTranslatef(320 - (float) barWidth / 2, 20, 0);
                         drawMemoryBar();
@@ -317,14 +188,14 @@ public class CustomSplash {
                     }
 
                     // timer
-                    if (enableTimer) {
+                    if (Config.enableTimer) {
                         glPushMatrix();
-                        setColor(fontColor);
+                        setColor(Config.fontColor);
                         glTranslatef(320 - Display.getWidth() / 2 + 4, 240 + Display.getHeight() / 2 - textHeight2, 0);
                         glScalef(2, 2, 1);
                         glEnable(GL_TEXTURE_2D);
                         String renderString = getString();
-                        fontRenderer.drawString(renderString, 0, 0, fontColor);
+                        fontRenderer.drawString(renderString, 0, 0, Config.fontColor);
                         glDisable(GL_TEXTURE_2D);
                         glPopMatrix();
                     }
@@ -348,16 +219,16 @@ public class CustomSplash {
                     angle += 1;
 
                     // forge logo
-                    if (forgeLogo) {
-                        setColor(backgroundColor);
+                    if (Config.forgeLogo) {
+                        setColor(Config.backgroundColor);
                         float fw = (float) forgeTexture.getWidth() / 2 / 2;
                         float fh = (float) forgeTexture.getHeight() / 2 / 2;
-                        if (rotate) {
+                        if (Config.rotate) {
                             float sh = Math.max(fw, fh);
-                            glTranslatef(320 + w / 2 - sh - logoOffset, 240 + h / 2 - sh - logoOffset, 0);
+                            glTranslatef(320 + w / 2 - sh - Config.logoOffset, 240 + h / 2 - sh - Config.logoOffset, 0);
                             glRotatef(angle, 0, 0, 1);
                         } else {
-                            glTranslatef(320 + w / 2 - fw - logoOffset, 240 + h / 2 - fh - logoOffset, 0);
+                            glTranslatef(320 + w / 2 - fw - Config.logoOffset, 240 + h / 2 - fh - Config.logoOffset, 0);
                         }
                         int f = (angle / 10) % forgeTexture.getFrames();
                         glEnable(GL_TEXTURE_2D);
@@ -431,23 +302,23 @@ public class CustomSplash {
                 String progress = "" + b.getStep() + "/" + b.getSteps();
                 glPushMatrix();
                 // title - message
-                setColor(fontColor);
+                setColor(Config.fontColor);
                 glScalef(2, 2, 1);
                 glEnable(GL_TEXTURE_2D);
-                fontRenderer.drawString(b.getTitle() + " " + progress + " - " + b.getMessage(), 0, 0, fontColor);
+                fontRenderer.drawString(b.getTitle() + " " + progress + " - " + b.getMessage(), 0, 0, Config.fontColor);
                 glDisable(GL_TEXTURE_2D);
                 glPopMatrix();
                 // border
                 glPushMatrix();
                 glTranslatef(0, textHeight2, 0);
-                setColor(barBorderColor);
+                setColor(Config.barBorderColor);
                 drawBox(barWidth, barHeight);
                 // interior
-                setColor(barBackgroundColor);
+                setColor(Config.barBackgroundColor);
                 glTranslatef(2, 2, 0);
                 drawBox(barWidth - 4, barHeight - 4);
                 // slidy part
-                setColor(barColor);
+                setColor(Config.barColor);
                 glTranslatef(2, 2, 0);
                 drawBox((barWidth - 8) * (b.getStep() + 1) / (b.getSteps() + 1), barHeight - 8); // Step can sometimes
                                                                                                  // be 0.
@@ -477,19 +348,19 @@ public class CustomSplash {
                 String progress = getMemoryString(usedMemory) + " / " + getMemoryString(maxMemory);
                 glPushMatrix();
                 // title - message
-                setColor(fontColor);
+                setColor(Config.fontColor);
                 glScalef(2, 2, 1);
                 glEnable(GL_TEXTURE_2D);
-                fontRenderer.drawString("Memory Usage : " + progress, 0, 0, fontColor);
+                fontRenderer.drawString("Memory Usage : " + progress, 0, 0, Config.fontColor);
                 glDisable(GL_TEXTURE_2D);
                 glPopMatrix();
                 // border
                 glPushMatrix();
                 glTranslatef(0, textHeight2, 0);
-                setColor(barBorderColor);
+                setColor(Config.barBorderColor);
                 drawBox(barWidth, barHeight);
                 // interior
-                setColor(barBackgroundColor);
+                setColor(Config.barBackgroundColor);
                 glTranslatef(2, 2, 0);
                 drawBox(barWidth - 4, barHeight - 4);
                 // slidy part
@@ -502,14 +373,14 @@ public class CustomSplash {
 
                 int memoryBarColor;
                 if (memoryColorPercent < 0.75f) {
-                    memoryBarColor = memoryGoodColor;
+                    memoryBarColor = Config.memoryGoodColor;
                 } else if (memoryColorPercent < 0.85f) {
-                    memoryBarColor = memoryWarnColor;
+                    memoryBarColor = Config.memoryWarnColor;
                 } else {
-                    memoryBarColor = memoryLowColor;
+                    memoryBarColor = Config.memoryLowColor;
                 }
-                if (showTotalMemoryLine) {
-                    setColor(memoryLowColor);
+                if (Config.showTotalMemoryLine) {
+                    setColor(Config.memoryLowColor);
                     glPushMatrix();
                     glTranslatef((barWidth - 8) * (totalMemory) / (maxMemory) - 2, 2, 0);
                     drawBox(2, barHeight - 8);
@@ -545,9 +416,9 @@ public class CustomSplash {
                     throw new RuntimeException(e);
                 }
                 glClearColor(
-                    (float) ((backgroundColor >> 16) & 0xFF) / 0xFF,
-                    (float) ((backgroundColor >> 8) & 0xFF) / 0xFF,
-                    (float) (backgroundColor & 0xFF) / 0xFF,
+                    (float) ((Config.backgroundColor >> 16) & 0xFF) / 0xFF,
+                    (float) ((Config.backgroundColor >> 8) & 0xFF) / 0xFF,
+                    (float) (Config.backgroundColor & 0xFF) / 0xFF,
                     1);
                 glDisable(GL_LIGHTING);
                 glDisable(GL_DEPTH_TEST);
@@ -602,7 +473,7 @@ public class CustomSplash {
      */
     @Deprecated
     public static void pause() {
-        if (!enabled) return;
+        if (!Config.enabled) return;
         checkThreadState();
         pause = true;
         lock.lock();
@@ -621,7 +492,7 @@ public class CustomSplash {
      */
     @Deprecated
     public static void resume() {
-        if (!enabled) return;
+        if (!Config.enabled) return;
         checkThreadState();
         pause = false;
         try {
@@ -636,7 +507,7 @@ public class CustomSplash {
     }
 
     public static void finish() {
-        if (!enabled) return;
+        if (!Config.enabled) return;
         try {
             checkThreadState();
             done = true;
@@ -657,7 +528,7 @@ public class CustomSplash {
                         stream.println("SplashProgress has detected a error loading Minecraft.");
                         stream.println("This can sometimes be caused by bad video drivers.");
                         stream.println(
-                            "We have automatically disabeled the new Splash Screen in config/splash.properties.");
+                            "We have automatically disabeled the new Splash Screen in config/modernsplash.cfg.");
                         stream.println("Try reloading minecraft before reporting any errors.");
                     }
                 };
@@ -668,7 +539,7 @@ public class CustomSplash {
                     protected void printStackTrace(WrappedPrintStream stream) {
                         stream.println("SplashProgress has detected a error loading Minecraft.");
                         stream.println("This can sometimes be caused by bad video drivers.");
-                        stream.println("Please try disabeling the new Splash Screen in config/splash.properties.");
+                        stream.println("Please try disabeling the new Splash Screen in config/modernsplash.cfg.");
                         stream.println("After doing so, try reloading minecraft before reporting any errors.");
                     }
                 };
@@ -677,24 +548,7 @@ public class CustomSplash {
     }
 
     private static boolean disableSplash() {
-        File configFile = new File(Minecraft.getMinecraft().mcDataDir, "config/splash.properties");
-        File parent = configFile.getParentFile();
-        if (!parent.exists()) parent.mkdirs();
-
-        FileReader r = null;
-        enabled = false;
-        config.setProperty("enabled", "false");
-
-        FileWriter w = null;
-        try {
-            w = new FileWriter(configFile);
-            config.store(w, "Splash screen properties");
-        } catch (IOException e) {
-            FMLLog.log(Level.ERROR, e, "Could not save the splash.properties file");
-            return false;
-        } finally {
-            IOUtils.closeQuietly(w);
-        }
+        Config.disableSplash();
         return true;
     }
 
@@ -855,14 +709,14 @@ public class CustomSplash {
     }
 
     public static void drawVanillaScreen() throws LWJGLException {
-        if (!enabled) {
+        if (!Config.enabled) {
             Minecraft.getMinecraft()
                 .loadScreen();
         }
     }
 
     public static void clearVanillaResources(TextureManager renderEngine, ResourceLocation mojangLogo) {
-        if (!enabled) {
+        if (!Config.enabled) {
             renderEngine.deleteTexture(mojangLogo);
         }
     }
