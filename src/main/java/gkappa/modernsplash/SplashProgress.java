@@ -11,6 +11,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.management.ManagementFactory;
+import java.lang.reflect.Field;
 import java.nio.IntBuffer;
 import java.util.Iterator;
 import java.util.concurrent.Semaphore;
@@ -68,6 +69,23 @@ public class SplashProgress {
     private static Texture logoTexture;
     private static Texture forgeTexture;
 
+    private static boolean enabled;
+    private static boolean forgeLogo;
+    private static boolean rotate;
+    private static int logoOffset;
+    private static int backgroundColor;
+    private static int fontColor;
+    private static int logoColor;
+    private static int barBorderColor;
+    private static int barColor;
+    private static int barBackgroundColor;
+    private static boolean showMemory;
+    private static boolean showTotalMemoryLine;
+    private static boolean enableTimer;
+    private static int memoryGoodColor;
+    private static int memoryWarnColor;
+    private static int memoryLowColor;
+
     private static float memoryColorPercent;
     private static long memoryColorChangeTime;
     public static final Semaphore mutex = new Semaphore(1);
@@ -75,11 +93,34 @@ public class SplashProgress {
     public static void start() {
         Config.load();
 
+        enabled = Config.enabled;
+        forgeLogo = Config.forgeLogo;
+        rotate = Config.rotate;
+        logoOffset = Config.logoOffset;
+        backgroundColor = Config.backgroundColor;
+        fontColor = Config.fontColor;
+        logoColor = Config.logoColor;
+        barBorderColor = Config.barBorderColor;
+        barColor = Config.barColor;
+        barBackgroundColor = Config.barBackgroundColor;
+        showMemory = Config.showMemory;
+        showTotalMemoryLine = Config.showTotalMemoryLine;
+        enableTimer = Config.enableTimer;
+        memoryGoodColor = Config.memoryGoodColor;
+        memoryWarnColor = Config.memoryWarnColor;
+        memoryLowColor = Config.memoryLowColor;
+
+        try {
+            Class<?> angelicaConfig = Class.forName("com.gtnewhorizons.angelica.config.AngelicaConfig");
+            Field f = angelicaConfig.getField("showSplashMemoryBar");
+            f.set(null, false);
+        } catch (Exception ignored) {}
+
         final ResourceLocation logoLoc = new ResourceLocation("modernsplash:textures/gui/title/mojang.png");
 
         miscPack = createResourcePack(Config.miscPackFile);
 
-        if (!Config.enabled) return;
+        if (!enabled) return;
         // getting debug info out of the way, while we still can
         FMLCommonHandler.instance()
             .registerCrashCallable(new ICrashCallable() {
@@ -165,7 +206,7 @@ public class SplashProgress {
                     glLoadIdentity();
 
                     // mojang logo
-                    setColor(Config.logoColor);
+                    setColor(logoColor);
                     glEnable(GL_TEXTURE_2D);
                     logoTexture.bind();
                     glBegin(GL_QUADS);
@@ -180,7 +221,7 @@ public class SplashProgress {
                     glEnd();
                     glDisable(GL_TEXTURE_2D);
 
-                    if (Config.showMemory) {
+                    if (showMemory) {
                         glPushMatrix();
                         glTranslatef(320 - (float) barWidth / 2, 20, 0);
                         drawMemoryBar();
@@ -188,14 +229,14 @@ public class SplashProgress {
                     }
 
                     // timer
-                    if (Config.enableTimer) {
+                    if (enableTimer) {
                         glPushMatrix();
-                        setColor(Config.fontColor);
+                        setColor(fontColor);
                         glTranslatef(320 - Display.getWidth() / 2 + 4, 240 + Display.getHeight() / 2 - textHeight2, 0);
                         glScalef(2, 2, 1);
                         glEnable(GL_TEXTURE_2D);
                         String renderString = getString();
-                        fontRenderer.drawString(renderString, 0, 0, Config.fontColor);
+                        fontRenderer.drawString(renderString, 0, 0, fontColor);
                         glDisable(GL_TEXTURE_2D);
                         glPopMatrix();
                     }
@@ -219,16 +260,16 @@ public class SplashProgress {
                     angle += 1;
 
                     // forge logo
-                    if (Config.forgeLogo) {
-                        setColor(Config.backgroundColor);
+                    if (forgeLogo) {
+                        setColor(backgroundColor);
                         float fw = (float) forgeTexture.getWidth() / 2 / 2;
                         float fh = (float) forgeTexture.getHeight() / 2 / 2;
-                        if (Config.rotate) {
+                        if (rotate) {
                             float sh = Math.max(fw, fh);
-                            glTranslatef(320 + w / 2 - sh - Config.logoOffset, 240 + h / 2 - sh - Config.logoOffset, 0);
+                            glTranslatef(320 + w / 2 - sh - logoOffset, 240 + h / 2 - sh - logoOffset, 0);
                             glRotatef(angle, 0, 0, 1);
                         } else {
-                            glTranslatef(320 + w / 2 - fw - Config.logoOffset, 240 + h / 2 - fh - Config.logoOffset, 0);
+                            glTranslatef(320 + w / 2 - fw - logoOffset, 240 + h / 2 - fh - logoOffset, 0);
                         }
                         int f = (angle / 10) % forgeTexture.getFrames();
                         glEnable(GL_TEXTURE_2D);
@@ -302,23 +343,23 @@ public class SplashProgress {
                 String progress = "" + b.getStep() + "/" + b.getSteps();
                 glPushMatrix();
                 // title - message
-                setColor(Config.fontColor);
+                setColor(fontColor);
                 glScalef(2, 2, 1);
                 glEnable(GL_TEXTURE_2D);
-                fontRenderer.drawString(b.getTitle() + " " + progress + " - " + b.getMessage(), 0, 0, Config.fontColor);
+                fontRenderer.drawString(b.getTitle() + " " + progress + " - " + b.getMessage(), 0, 0, fontColor);
                 glDisable(GL_TEXTURE_2D);
                 glPopMatrix();
                 // border
                 glPushMatrix();
                 glTranslatef(0, textHeight2, 0);
-                setColor(Config.barBorderColor);
+                setColor(barBorderColor);
                 drawBox(barWidth, barHeight);
                 // interior
-                setColor(Config.barBackgroundColor);
+                setColor(barBackgroundColor);
                 glTranslatef(2, 2, 0);
                 drawBox(barWidth - 4, barHeight - 4);
                 // slidy part
-                setColor(Config.barColor);
+                setColor(barColor);
                 glTranslatef(2, 2, 0);
                 drawBox((barWidth - 8) * (b.getStep() + 1) / (b.getSteps() + 1), barHeight - 8); // Step can sometimes
                                                                                                  // be 0.
@@ -348,19 +389,19 @@ public class SplashProgress {
                 String progress = getMemoryString(usedMemory) + " / " + getMemoryString(maxMemory);
                 glPushMatrix();
                 // title - message
-                setColor(Config.fontColor);
+                setColor(fontColor);
                 glScalef(2, 2, 1);
                 glEnable(GL_TEXTURE_2D);
-                fontRenderer.drawString("Memory Usage : " + progress, 0, 0, Config.fontColor);
+                fontRenderer.drawString("Memory Usage : " + progress, 0, 0, fontColor);
                 glDisable(GL_TEXTURE_2D);
                 glPopMatrix();
                 // border
                 glPushMatrix();
                 glTranslatef(0, textHeight2, 0);
-                setColor(Config.barBorderColor);
+                setColor(barBorderColor);
                 drawBox(barWidth, barHeight);
                 // interior
-                setColor(Config.barBackgroundColor);
+                setColor(barBackgroundColor);
                 glTranslatef(2, 2, 0);
                 drawBox(barWidth - 4, barHeight - 4);
                 // slidy part
@@ -373,16 +414,16 @@ public class SplashProgress {
 
                 int memoryBarColor;
                 if (memoryColorPercent < 0.75f) {
-                    memoryBarColor = Config.memoryGoodColor;
+                    memoryBarColor = memoryGoodColor;
                 } else if (memoryColorPercent < 0.85f) {
-                    memoryBarColor = Config.memoryWarnColor;
+                    memoryBarColor = memoryWarnColor;
                 } else {
-                    memoryBarColor = Config.memoryLowColor;
+                    memoryBarColor = memoryLowColor;
                 }
-                if (Config.showTotalMemoryLine) {
-                    setColor(Config.memoryLowColor);
+                if (showTotalMemoryLine) {
+                    setColor(memoryLowColor);
                     glPushMatrix();
-                    glTranslatef((barWidth - 8) * (totalMemory) / (maxMemory) - 2, 2, 0);
+                    glTranslatef((float) ((barWidth - 8) * (totalMemory)) / (maxMemory) - 2, 2, 0);
                     drawBox(2, barHeight - 8);
                     glPopMatrix();
                 }
@@ -416,9 +457,9 @@ public class SplashProgress {
                     throw new RuntimeException(e);
                 }
                 glClearColor(
-                    (float) ((Config.backgroundColor >> 16) & 0xFF) / 0xFF,
-                    (float) ((Config.backgroundColor >> 8) & 0xFF) / 0xFF,
-                    (float) (Config.backgroundColor & 0xFF) / 0xFF,
+                    (float) ((backgroundColor >> 16) & 0xFF) / 0xFF,
+                    (float) ((backgroundColor >> 8) & 0xFF) / 0xFF,
+                    (float) (backgroundColor & 0xFF) / 0xFF,
                     1);
                 glDisable(GL_LIGHTING);
                 glDisable(GL_DEPTH_TEST);
@@ -473,7 +514,7 @@ public class SplashProgress {
      */
     @Deprecated
     public static void pause() {
-        if (!Config.enabled) return;
+        if (!enabled) return;
         checkThreadState();
         pause = true;
         lock.lock();
@@ -492,7 +533,7 @@ public class SplashProgress {
      */
     @Deprecated
     public static void resume() {
-        if (!Config.enabled) return;
+        if (!enabled) return;
         checkThreadState();
         pause = false;
         try {
@@ -507,7 +548,7 @@ public class SplashProgress {
     }
 
     public static void finish() {
-        if (!Config.enabled) return;
+        if (!enabled) return;
         try {
             checkThreadState();
             done = true;
@@ -548,6 +589,7 @@ public class SplashProgress {
     }
 
     private static boolean disableSplash() {
+        enabled = false;
         Config.disableSplash();
         return true;
     }
@@ -709,14 +751,14 @@ public class SplashProgress {
     }
 
     public static void drawVanillaScreen() throws LWJGLException {
-        if (!Config.enabled) {
+        if (!enabled) {
             Minecraft.getMinecraft()
                 .loadScreen();
         }
     }
 
     public static void clearVanillaResources(TextureManager renderEngine, ResourceLocation mojangLogo) {
-        if (!Config.enabled) {
+        if (!enabled) {
             renderEngine.deleteTexture(mojangLogo);
         }
     }
