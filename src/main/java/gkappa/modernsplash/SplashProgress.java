@@ -49,7 +49,7 @@ import cpw.mods.fml.common.ProgressManager;
 import cpw.mods.fml.common.ProgressManager.ProgressBar;
 import cpw.mods.fml.common.asm.FMLSanityChecker;
 
-public class CustomSplash {
+public class SplashProgress {
 
     private static Drawable d;
     private static volatile boolean pause = false;
@@ -593,7 +593,7 @@ public class CustomSplash {
                 while ((size / width) * (size / height) < frames) size *= 2;
                 this.size = size;
                 glEnable(GL_TEXTURE_2D);
-                synchronized (CustomSplash.class) {
+                synchronized (SplashProgress.class) {
                     name = glGenTextures();
                     glBindTexture(GL_TEXTURE_2D, name);
                 }
