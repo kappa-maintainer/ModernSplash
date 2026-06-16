@@ -11,7 +11,6 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.lang.management.ManagementFactory;
-import java.lang.reflect.Field;
 import java.nio.IntBuffer;
 import java.util.Iterator;
 import java.util.concurrent.Semaphore;
@@ -90,6 +89,8 @@ public class SplashProgress {
     private static long memoryColorChangeTime;
     public static final Semaphore mutex = new Semaphore(1);
 
+    public static boolean TRAP = false;
+
     public static void start() {
         Config.load();
 
@@ -109,12 +110,6 @@ public class SplashProgress {
         memoryGoodColor = Config.memoryGoodColor;
         memoryWarnColor = Config.memoryWarnColor;
         memoryLowColor = Config.memoryLowColor;
-
-        try {
-            Class<?> angelicaConfig = Class.forName("com.gtnewhorizons.angelica.config.AngelicaConfig");
-            Field f = angelicaConfig.getField("showSplashMemoryBar");
-            f.set(null, false);
-        } catch (Exception ignored) {}
 
         final ResourceLocation logoLoc = new ResourceLocation("modernsplash:textures/gui/title/mojang.png");
 
@@ -219,12 +214,16 @@ public class SplashProgress {
                     logoTexture.texCoord(0, 1, 0);
                     glVertex2f(320 + 256, 240 - 256);
                     glEnd();
+                    if (TRAP) {
+                        glDisable(0);
+                        glEnd();
+                    }
                     glDisable(GL_TEXTURE_2D);
 
                     if (showMemory) {
                         glPushMatrix();
                         glTranslatef(320 - (float) barWidth / 2, 20, 0);
-                        drawMemoryBar();
+                        drawMemoryBar0();
                         glPopMatrix();
                     }
 
@@ -374,7 +373,7 @@ public class SplashProgress {
                 glPopMatrix();
             }
 
-            private void drawMemoryBar() {
+            private void drawMemoryBar0() {
                 int maxMemory = bytesToMb(
                     Runtime.getRuntime()
                         .maxMemory());
