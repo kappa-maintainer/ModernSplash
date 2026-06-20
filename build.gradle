@@ -37,10 +37,6 @@ java {
 configurations {
     contain
     implementation.extendsFrom(contain)
-    modCompileOnly
-    compileOnly.extendsFrom(modCompileOnly)
-    modRuntimeOnly
-    runtimeOnly.extendsFrom(modRuntimeOnly)
 }
 
 def remapTaskName = enable_shadow.toBoolean() ? "remapShadowJar" : "remapJar"
@@ -59,7 +55,6 @@ unimined.minecraft {
         }
         loader "0.5.14-alpha"
         runs.all {
-            systemProperty("crl.dev.mixin", "${mod_id}.default.mixin.json")
             args += ['--username', minecraft_username]
             def extraArgs = extra_jvm_args
             if (extraArgs != null && !extraArgs.trim().isEmpty()) {
@@ -81,15 +76,6 @@ unimined.minecraft {
     String jarTaskName = enable_shadow.toBoolean() ? "shadowJar" : "jar"
 
     remap(tasks.named(jarTaskName).get()) {
-        mixinRemap {
-            enableBaseMixin()
-            enableMixinExtra()
-        }
-    }
-
-    mods {
-        remap(configurations.modCompileOnly)
-        remap(configurations.modRuntimeOnly)
     }
 }
 
@@ -182,7 +168,6 @@ jar {
         manifest {
             def attribute_map = [:]
             attribute_map['ModType'] = "CRL"
-            attribute_map['MixinConfigs'] = "${mod_id}.default.mixin.json"
             if (configurations.contain.size() > 0) {
                 attribute_map['ContainedDeps'] = configurations.contain.collect { it.name }.join(' ')
                 attribute_map['NonModDeps'] = true
