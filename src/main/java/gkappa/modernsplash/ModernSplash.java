@@ -1,7 +1,9 @@
 package gkappa.modernsplash;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Gui;
 import net.minecraft.client.gui.GuiMainMenu;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.common.MinecraftForge;
@@ -28,6 +30,12 @@ public class ModernSplash {
     public static final Logger LOGGER = LogManager.getLogger("ModernSplash");
 
     public static long doneTime = 0;
+
+    public static volatile long fadeOutStart = -1L;
+    public static volatile long fadePhase2Start = -1L;
+    public static final long FADE_DURATION = 1000L;
+    public static final long FADE_PHASE1 = 500L;
+    public static final long FADE_PHASE2 = 500L;
 
     boolean triggered = false;
     boolean trueFullscreen;
@@ -65,6 +73,24 @@ public class ModernSplash {
 
             TimeHistory.saveHistory(doneTime);
         }
+
+        if (fadePhase2Start < 0 && fadeOutStart > 0 && event.getGui() instanceof GuiMainMenu) {
+            fadePhase2Start = System.nanoTime();
+        }
+    }
+
+    @SubscribeEvent
+    public void onGuiDrawPost(GuiScreenEvent.DrawScreenEvent.Post event) {
+        if (fadePhase2Start > 0 && event.getGui() instanceof GuiMainMenu menu) {
+            long elapsed = (System.nanoTime() - fadePhase2Start) / 1000000;
+            if (elapsed < FADE_PHASE2) {
+                float alpha = 1.0f - (float) elapsed / FADE_PHASE2;
+                drawFadeOverlay(menu.width, menu.height, alpha);
+            } else {
+                fadePhase2Start = -1;
+                fadeOutStart = -1;
+            }
+        }
     }
 
     @SubscribeEvent
@@ -80,7 +106,7 @@ public class ModernSplash {
                 if(guiScale <= 0) guiScale = 1; // failsafe to prevent divide by 0
 
                 String txt = "Startup took " + minutes + "m " + seconds + "s.";
-                Minecraft.getMinecraft().fontRenderer.drawStringWithShadow(txt, (mainMenu.width - Minecraft.getMinecraft().fontRenderer.getStringWidth(txt))/2, 10, Color.YELLOW.getRGB());
+                Minecraft.getMinecraft().fontRenderer.drawStringWithShadow(txt, (float) (mainMenu.width - Minecraft.getMinecraft().fontRenderer.getStringWidth(txt)) /2, 10, Color.YELLOW.getRGB());
             }
 
         }else if(hasBeenMainMenu){
@@ -106,5 +132,22 @@ public class ModernSplash {
 
     @EventHandler
     public void onServerStopping(FMLServerStoppingEvent event) {
+    }
+
+    private static void drawFadeOverlay(int width, int height, float alpha) {
+        if (alpha <= 0.0f) return;
+
+        GlStateManager.enableBlend();
+        GlStateManager.disableAlpha();
+        GlStateManager.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA);
+
+        int bg = Config.backgroundColor;
+        int a = (int) (alpha * 255);
+        int bgColor = (a << 24) | (bg & 0x00FFFFFF);
+
+        Gui.drawRect(0, 0, width, height, bgColor);
+
+        GlStateManager.disableBlend();
+        GlStateManager.enableAlpha();
     }
 }
