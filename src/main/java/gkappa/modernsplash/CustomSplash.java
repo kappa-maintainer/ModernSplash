@@ -220,7 +220,7 @@ public class CustomSplash
                     }
 
                     // memory usage
-                    if (Config.showMemory)
+                    if (Config.showMemory && !Config.mimicModern)
                     {
                         glPushMatrix();
                         glTranslatef(320 - (float) barWidth / 2, 20, 0);
@@ -229,7 +229,7 @@ public class CustomSplash
                     }
 
                     // timer
-                    if(Config.enableTimer && phase1Alpha > 0.0f) {
+                    if(Config.enableTimer && phase1Alpha > 0.0f && !Config.mimicModern) {
                         glPushMatrix();
                         setColorWithAlpha(Config.fontColor, phase1Alpha);
                         glTranslatef(320 - (float) Display.getWidth() / 2 + 4, 240 + (float) Display.getHeight() / 2 - textHeight2, 0);
@@ -247,20 +247,22 @@ public class CustomSplash
                         glPushMatrix();
                         glTranslatef(320 - (float)barWidth / 2, 310, 0);
                         drawBar(first, phase1Alpha);
-                        if(penult != null)
-                        {
-                            glTranslatef(0, barOffset, 0);
-                            drawBar(penult, phase1Alpha);
-                        }
-                        if(last != null)
-                        {
-                            glTranslatef(0, barOffset, 0);
-                            drawBar(last, phase1Alpha);
+                        if(!Config.mimicModern) {
+                            if(penult != null)
+                            {
+                                glTranslatef(0, barOffset, 0);
+                                drawBar(penult, phase1Alpha);
+                            }
+                            if(last != null)
+                            {
+                                glTranslatef(0, barOffset, 0);
+                                drawBar(last, phase1Alpha);
+                            }
                         }
                         glPopMatrix();
                     }
 
-                    if (Config.forgeLogo && phase1Alpha > 0.0f) {
+                    if (Config.forgeLogo && phase1Alpha > 0.0f && !Config.mimicModern) {
 
                         angle += 1;
 
@@ -382,19 +384,21 @@ public class CustomSplash
 
             private void drawBar(ProgressBar b, float alpha)
             {
-                String progress = "" + b.getStep() + "/" + b.getSteps();
                 if (alpha <= 0.0f) return;
-                glPushMatrix();
-                // title - message
-                setColorWithAlpha(Config.fontColor, alpha);
-                glScalef(2, 2, 1);
-                glEnable(GL_TEXTURE_2D);
-                fontRenderer.drawString(b.getTitle() + " " + progress + " - " + b.getMessage(), 0, 0, 0x000000);
-                glDisable(GL_TEXTURE_2D);
-                glPopMatrix();
+                if (!Config.mimicModern) {
+                    String progress = "" + b.getStep() + "/" + b.getSteps();
+                    glPushMatrix();
+                    // title - message
+                    setColorWithAlpha(Config.fontColor, alpha);
+                    glScalef(2, 2, 1);
+                    glEnable(GL_TEXTURE_2D);
+                    fontRenderer.drawString(b.getTitle() + " " + progress + " - " + b.getMessage(), 0, 0, 0x000000);
+                    glDisable(GL_TEXTURE_2D);
+                    glPopMatrix();
+                }
                 // border
                 glPushMatrix();
-                glTranslatef(0, textHeight2, 0);
+                glTranslatef(0, Config.mimicModern ? 0 : textHeight2, 0);
                 setColorWithAlpha(Config.barBorderColor, alpha);
                 drawBox(barWidth, barHeight);
                 // interior
@@ -405,13 +409,6 @@ public class CustomSplash
                 setColorWithAlpha(Config.barColor, alpha);
                 glTranslatef(2, 2, 0);
                 drawBox((barWidth - 8) * (b.getStep() + 1) / (b.getSteps() + 1), barHeight - 8); // Step can sometimes be 0.
-                // progress text
-                //String progress = "" + b.getStep() + "/" + b.getSteps();
-                /*glTranslatef(((float)barWidth - 4) / 2 - fontRenderer.getStringWidth(progress), 4, 0);
-                setColor(Config.fontColor);
-                glScalef(2, 2, 1);
-                glEnable(GL_TEXTURE_2D);
-                fontRenderer.drawString(progress, 0, 0, 0x000000);*/
                 glPopMatrix();
             }
 

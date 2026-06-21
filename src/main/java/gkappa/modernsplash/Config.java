@@ -18,6 +18,7 @@ public class Config {
     public static boolean enabled;
     public static boolean forgeLogo;
     public static boolean rotate;
+    public static boolean mimicModern;
     public static int logoOffset;
     public static int backgroundColor;
     public static int fontColor;
@@ -52,6 +53,7 @@ public class Config {
             && ((!FMLClientHandler.instance().hasOptifine()) || Launch.blackboard.containsKey("optifine.ForgeSplashCompatible"));
         rotate = config.getBoolean("rotate", "splash", false, "Rotate the Forge logo");
         forgeLogo = config.getBoolean("forgeLogo", "splash", false, "Show the Forge logo");
+        mimicModern = config.getBoolean("mimicModern", "splash", false, "Only show main progress bar and logo");
         showMemory = config.getBoolean("showMemory", "splash", true, "Show the memory usage bar");
         showTotalMemoryLine = config
             .getBoolean("showTotalMemoryLine", "splash", false, "Show the total memory line on the memory bar");
