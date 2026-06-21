@@ -19,7 +19,7 @@ version = mod_version
 group = root_package
 
 base {
-    archivesName = mod_id
+    archivesName = "$mod_name-1.12.2"
 }
 
 java {
