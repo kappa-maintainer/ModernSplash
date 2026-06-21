@@ -150,6 +150,9 @@ public class CustomSplash
             private final int barOffset = 45;
             private long updateTiming;
             private long framecount;
+            private float smoothProgressFirst = 0.0f;
+            private float smoothProgressPenult = 0.0f;
+            private float smoothProgressLast = 0.0f;
             @Override
             public void run()
             {
@@ -187,6 +190,29 @@ public class CustomSplash
                             penult = last;
                             last = i.next();
                         }
+                    }
+
+                    if (first != null) {
+                        float target = (float) (first.getStep() + 1) / (first.getSteps() + 1);
+                        smoothProgressFirst = smoothProgressFirst * 0.95f + target * 0.05f;
+                        if (smoothProgressFirst < 0.0f) smoothProgressFirst = 0.0f;
+                        if (smoothProgressFirst > 1.0f) smoothProgressFirst = 1.0f;
+                    } else if (ModernSplash.fadeOutStart > 0 && smoothProgressFirst < 0.99f) {
+                        smoothProgressFirst = smoothProgressFirst * 0.95f + 0.05f;
+                        if (smoothProgressFirst > 1.0f) smoothProgressFirst = 1.0f;
+                        ModernSplash.fadeOutStart = System.nanoTime();
+                    }
+                    if (penult != null) {
+                        float target = (float) (penult.getStep() + 1) / (penult.getSteps() + 1);
+                        smoothProgressPenult = smoothProgressPenult * 0.95f + target * 0.05f;
+                        if (smoothProgressPenult < 0.0f) smoothProgressPenult = 0.0f;
+                        if (smoothProgressPenult > 1.0f) smoothProgressPenult = 1.0f;
+                    }
+                    if (last != null) {
+                        float target = (float) (last.getStep() + 1) / (last.getSteps() + 1);
+                        smoothProgressLast = smoothProgressLast * 0.95f + target * 0.05f;
+                        if (smoothProgressLast < 0.0f) smoothProgressLast = 0.0f;
+                        if (smoothProgressLast > 1.0f) smoothProgressLast = 1.0f;
                     }
 
                     glClear(GL_COLOR_BUFFER_BIT);
@@ -242,21 +268,22 @@ public class CustomSplash
                     }
 
                     // bars
-                    if(first != null)
+                    boolean fadingOut = ModernSplash.fadeOutStart > 0;
+                    if(first != null || (fadingOut && smoothProgressFirst > 0.0f))
                     {
                         glPushMatrix();
                         glTranslatef(320 - (float)barWidth / 2, 310, 0);
-                        drawBar(first, phase1Alpha);
-                        if(!Config.mimicModern) {
+                        drawBar(first, phase1Alpha, smoothProgressFirst);
+                        if(!Config.mimicModern && first != null) {
                             if(penult != null)
                             {
                                 glTranslatef(0, barOffset, 0);
-                                drawBar(penult, phase1Alpha);
+                                drawBar(penult, phase1Alpha, smoothProgressPenult);
                             }
                             if(last != null)
                             {
                                 glTranslatef(0, barOffset, 0);
-                                drawBar(last, phase1Alpha);
+                                drawBar(last, phase1Alpha, smoothProgressLast);
                             }
                         }
                         glPopMatrix();
@@ -382,10 +409,10 @@ public class CustomSplash
                 glEnd();
             }
 
-            private void drawBar(ProgressBar b, float alpha)
+            private void drawBar(ProgressBar b, float alpha, float smoothProgress)
             {
                 if (alpha <= 0.0f) return;
-                if (!Config.mimicModern) {
+                if (!Config.mimicModern && b != null) {
                     String progress = "" + b.getStep() + "/" + b.getSteps();
                     glPushMatrix();
                     // title - message
@@ -398,7 +425,7 @@ public class CustomSplash
                 }
                 // border
                 glPushMatrix();
-                glTranslatef(0, Config.mimicModern ? 0 : textHeight2, 0);
+                glTranslatef(0, (!Config.mimicModern && b != null) ? textHeight2 : 0, 0);
                 setColorWithAlpha(Config.barBorderColor, alpha);
                 drawBox(barWidth, barHeight);
                 // interior
@@ -408,7 +435,7 @@ public class CustomSplash
                 // slidy part
                 setColorWithAlpha(Config.barColor, alpha);
                 glTranslatef(2, 2, 0);
-                drawBox((barWidth - 8) * (b.getStep() + 1) / (b.getSteps() + 1), barHeight - 8); // Step can sometimes be 0.
+                drawBox((int) ((barWidth - 8) * smoothProgress), barHeight - 8);
                 glPopMatrix();
             }
 
