@@ -159,6 +159,7 @@ public class CustomSplash
                 setGL();
                 fontTexture = new Texture(fontLoc, null);
                 logoTexture = new Texture(logoLoc, null, true);
+                ModernSplash.logoGlTextureName = logoTexture.getName();
                 forgeTexture = new Texture(forgeLoc, forgeFallbackLoc);
                 glEnable(GL_TEXTURE_2D);
                 fontRenderer = new SplashFontRenderer();
@@ -168,11 +169,12 @@ public class CustomSplash
                     framecount++;
 
                     long fadeProgress = 0;
-                    float phase1Alpha = 1.0f;
+                    float barAlpha = 1.0f;
+                    float logoAlpha = 1.0f;
                     if (ModernSplash.fadeOutStart > 0) {
                         fadeProgress = (System.nanoTime() - ModernSplash.fadeOutStart) / 1000000; // ms
                         if (fadeProgress < ModernSplash.FADE_PHASE1) {
-                            phase1Alpha = 1.0f - (float) fadeProgress / ModernSplash.FADE_PHASE1;
+                            barAlpha = 1.0f - (float) fadeProgress / ModernSplash.FADE_PHASE1;
                         } else {
                             // phase 2: splash thread exits, main thread draws overlay
                             done = true;
@@ -228,8 +230,8 @@ public class CustomSplash
                     glLoadIdentity();
 
                     // mojang logo
-                    if (phase1Alpha > 0.0f) {
-                        setColorWithAlpha(Config.logoColor, phase1Alpha);
+                    if (logoAlpha > 0.0f) {
+                        setColorWithAlpha(Config.logoColor, logoAlpha);
                         glEnable(GL_TEXTURE_2D);
                         logoTexture.bind();
                         glBegin(GL_QUADS);
@@ -250,14 +252,14 @@ public class CustomSplash
                     {
                         glPushMatrix();
                         glTranslatef(320 - (float) barWidth / 2, 20, 0);
-                        drawMemoryBar(phase1Alpha);
+                        drawMemoryBar(barAlpha);
                         glPopMatrix();
                     }
 
                     // timer
-                    if(Config.enableTimer && phase1Alpha > 0.0f && !Config.mimicModern) {
+                    if(Config.enableTimer && barAlpha > 0.0f && !Config.mimicModern) {
                         glPushMatrix();
-                        setColorWithAlpha(Config.fontColor, phase1Alpha);
+                        setColorWithAlpha(Config.fontColor, barAlpha);
                         glTranslatef(320 - (float) Display.getWidth() / 2 + 4, 240 + (float) Display.getHeight() / 2 - textHeight2, 0);
                         glScalef(2, 2, 1);
                         glEnable(GL_TEXTURE_2D);
@@ -273,28 +275,28 @@ public class CustomSplash
                     {
                         glPushMatrix();
                         glTranslatef(320 - (float)barWidth / 2, 310, 0);
-                        drawBar(first, phase1Alpha, smoothProgressFirst);
+                        drawBar(first, barAlpha, smoothProgressFirst);
                         if(!Config.mimicModern && first != null) {
                             if(penult != null)
                             {
                                 glTranslatef(0, barOffset, 0);
-                                drawBar(penult, phase1Alpha, smoothProgressPenult);
+                                drawBar(penult, barAlpha, smoothProgressPenult);
                             }
                             if(last != null)
                             {
                                 glTranslatef(0, barOffset, 0);
-                                drawBar(last, phase1Alpha, smoothProgressLast);
+                                drawBar(last, barAlpha, smoothProgressLast);
                             }
                         }
                         glPopMatrix();
                     }
 
-                    if (Config.forgeLogo && phase1Alpha > 0.0f && !Config.mimicModern) {
+                    if (Config.forgeLogo && barAlpha > 0.0f && !Config.mimicModern) {
 
                         angle += 1;
 
                         // forge logo
-                        setColorWithAlpha(0xFFFFFF, phase1Alpha);
+                        setColorWithAlpha(0xFFFFFF, barAlpha);
                         float fw = (float) forgeTexture.getWidth() / 2;
                         float fh = (float) forgeTexture.getHeight() / 2;
                         if (Config.rotate) {
@@ -649,7 +651,6 @@ public class CustomSplash
             d.releaseContext();
             Display.getDrawable().makeCurrent();
             fontTexture.delete();
-            logoTexture.delete();
             forgeTexture.delete();
         }
         catch (Exception e)
