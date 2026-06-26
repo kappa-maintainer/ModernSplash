@@ -75,6 +75,24 @@ public class CustomSplash
     private static final IResourcePack fmlPack = createResourcePack(FMLSanityChecker.fmlLocation);
     private static IResourcePack miscPack;
 
+    private static boolean enabled;
+    private static boolean forgeLogo;
+    private static boolean rotate;
+    private static boolean mimicModern;
+    private static int logoOffset;
+    private static int backgroundColor;
+    private static int fontColor;
+    private static int logoColor;
+    private static int barBorderColor;
+    private static int barColor;
+    private static int barBackgroundColor;
+    private static boolean showMemory;
+    private static boolean showTotalMemoryLine;
+    private static boolean enableTimer;
+    private static int memoryGoodColor;
+    private static int memoryWarnColor;
+    private static int memoryLowColor;
+
     private static Texture fontTexture;
     private static Texture logoTexture;
     private static Texture forgeTexture;
@@ -91,7 +109,25 @@ public class CustomSplash
     {
         Config.load();
 
-        if (!Config.enabled) return;
+        enabled = Config.enabled;
+        forgeLogo = Config.forgeLogo;
+        rotate = Config.rotate;
+        mimicModern = Config.mimicModern;
+        logoOffset = Config.logoOffset;
+        backgroundColor = Config.backgroundColor;
+        fontColor = Config.fontColor;
+        logoColor = Config.logoColor;
+        barBorderColor = Config.barBorderColor;
+        barColor = Config.barColor;
+        barBackgroundColor = Config.barBackgroundColor;
+        showMemory = Config.showMemory;
+        showTotalMemoryLine = Config.showTotalMemoryLine;
+        enableTimer = Config.enableTimer;
+        memoryGoodColor = Config.memoryGoodColor;
+        memoryWarnColor = Config.memoryWarnColor;
+        memoryLowColor = Config.memoryLowColor;
+
+        if (!enabled) return;
 
         final ResourceLocation fontLoc = Config.fontLoc;
         final ResourceLocation logoLoc = new ResourceLocation("modernsplash:textures/gui/title/mojang.png");
@@ -231,7 +267,7 @@ public class CustomSplash
 
                     // mojang logo
                     if (logoAlpha > 0.0f) {
-                        setColorWithAlpha(Config.logoColor, logoAlpha);
+                        setColorWithAlpha(logoColor, logoAlpha);
                         glEnable(GL_TEXTURE_2D);
                         logoTexture.bind();
                         glBegin(GL_QUADS);
@@ -248,7 +284,7 @@ public class CustomSplash
                     }
 
                     // memory usage
-                    if (Config.showMemory && !Config.mimicModern)
+                    if (showMemory && !mimicModern)
                     {
                         glPushMatrix();
                         glTranslatef(320 - (float) barWidth / 2, 20, 0);
@@ -257,9 +293,9 @@ public class CustomSplash
                     }
 
                     // timer
-                    if(Config.enableTimer && barAlpha > 0.0f && !Config.mimicModern) {
+                    if(enableTimer && barAlpha > 0.0f && !mimicModern) {
                         glPushMatrix();
-                        setColorWithAlpha(Config.fontColor, barAlpha);
+                        setColorWithAlpha(fontColor, barAlpha);
                         glTranslatef(320 - (float) Display.getWidth() / 2 + 4, 240 + (float) Display.getHeight() / 2 - textHeight2, 0);
                         glScalef(2, 2, 1);
                         glEnable(GL_TEXTURE_2D);
@@ -276,7 +312,7 @@ public class CustomSplash
                         glPushMatrix();
                         glTranslatef(320 - (float)barWidth / 2, 310, 0);
                         drawBar(first, barAlpha, smoothProgressFirst);
-                        if(!Config.mimicModern && first != null) {
+                        if(!mimicModern && first != null) {
                             if(penult != null)
                             {
                                 glTranslatef(0, barOffset, 0);
@@ -291,7 +327,7 @@ public class CustomSplash
                         glPopMatrix();
                     }
 
-                    if (Config.forgeLogo && barAlpha > 0.0f && !Config.mimicModern) {
+                    if (forgeLogo && barAlpha > 0.0f && !mimicModern) {
 
                         angle += 1;
 
@@ -299,12 +335,12 @@ public class CustomSplash
                         setColorWithAlpha(0xFFFFFF, barAlpha);
                         float fw = (float) forgeTexture.getWidth() / 2;
                         float fh = (float) forgeTexture.getHeight() / 2;
-                        if (Config.rotate) {
+                        if (rotate) {
                             float sh = Math.max(fw, fh);
-                            glTranslatef(320 + w / 2 - sh - Config.logoOffset, 240 + h / 2 - sh - Config.logoOffset, 0);
+                            glTranslatef(320 + w / 2 - sh - logoOffset, 240 + h / 2 - sh - logoOffset, 0);
                             glRotatef(angle, 0, 0, 1);
                         } else {
-                            glTranslatef(320 + w / 2 - fw - Config.logoOffset, 240 + h / 2 - fh - Config.logoOffset, 0);
+                            glTranslatef(320 + w / 2 - fw - logoOffset, 240 + h / 2 - fh - logoOffset, 0);
                         }
                         int f = (angle / 5) % forgeTexture.getFrames();
                         glEnable(GL_TEXTURE_2D);
@@ -414,11 +450,11 @@ public class CustomSplash
             private void drawBar(ProgressBar b, float alpha, float smoothProgress)
             {
                 if (alpha <= 0.0f) return;
-                if (!Config.mimicModern && b != null) {
+                if (!mimicModern && b != null) {
                     String progress = "" + b.getStep() + "/" + b.getSteps();
                     glPushMatrix();
                     // title - message
-                    setColorWithAlpha(Config.fontColor, alpha);
+                    setColorWithAlpha(fontColor, alpha);
                     glScalef(2, 2, 1);
                     glEnable(GL_TEXTURE_2D);
                     fontRenderer.drawString(b.getTitle() + " " + progress + " - " + b.getMessage(), 0, 0, 0x000000);
@@ -427,15 +463,15 @@ public class CustomSplash
                 }
                 // border
                 glPushMatrix();
-                glTranslatef(0, (!Config.mimicModern && b != null) ? textHeight2 : 0, 0);
-                setColorWithAlpha(Config.barBorderColor, alpha);
+                glTranslatef(0, (!mimicModern && b != null) ? textHeight2 : 0, 0);
+                setColorWithAlpha(barBorderColor, alpha);
                 drawBox(barWidth, barHeight);
                 // interior
-                setColorWithAlpha(Config.barBackgroundColor, alpha);
+                setColorWithAlpha(barBackgroundColor, alpha);
                 glTranslatef(2, 2, 0);
                 drawBox(barWidth - 4, barHeight - 4);
                 // slidy part
-                setColorWithAlpha(Config.barColor, alpha);
+                setColorWithAlpha(barColor, alpha);
                 glTranslatef(2, 2, 0);
                 drawBox((int) ((barWidth - 8) * smoothProgress), barHeight - 8);
                 glPopMatrix();
@@ -451,7 +487,7 @@ public class CustomSplash
                 String progress = getMemoryString(usedMemory) + " / " + getMemoryString(maxMemory);
                 glPushMatrix();
                 // title - message
-                setColorWithAlpha(Config.fontColor, alpha);
+                setColorWithAlpha(fontColor, alpha);
                 glScalef(2, 2, 1);
                 glEnable(GL_TEXTURE_2D);
                 fontRenderer.drawString("Memory Usage : " + progress, 0, 0, 0x000000);
@@ -460,10 +496,10 @@ public class CustomSplash
                 // border
                 glPushMatrix();
                 glTranslatef(0, textHeight2, 0);
-                setColorWithAlpha(Config.barBorderColor, alpha);
+                setColorWithAlpha(barBorderColor, alpha);
                 drawBox(barWidth, barHeight);
                 // interior
-                setColorWithAlpha(Config.barBackgroundColor, alpha);
+                setColorWithAlpha(barBackgroundColor, alpha);
                 glTranslatef(2, 2, 0);
                 drawBox(barWidth - 4, barHeight - 4);
                 // slidy part
@@ -478,18 +514,18 @@ public class CustomSplash
                 int memoryBarColor;
                 if (memoryColorPercent < 0.75f)
                 {
-                    memoryBarColor = Config.memoryGoodColor;
+                    memoryBarColor = memoryGoodColor;
                 }
                 else if (memoryColorPercent < 0.85f)
                 {
-                    memoryBarColor = Config.memoryWarnColor;
+                    memoryBarColor = memoryWarnColor;
                 }
                 else
                 {
-                    memoryBarColor = Config.memoryLowColor;
+                    memoryBarColor = memoryLowColor;
                 }
-                if(Config.showTotalMemoryLine) {
-                    setColorWithAlpha(Config.memoryLowColor, alpha);
+                if(showTotalMemoryLine) {
+                    setColorWithAlpha(memoryLowColor, alpha);
                     glPushMatrix();
                     glTranslatef((float) ((barWidth - 8) * (totalMemory)) / (maxMemory) - 2, 2, 0);
                     drawBox(2, barHeight - 8);
@@ -502,7 +538,7 @@ public class CustomSplash
                 // progress text
                 //String progress = getMemoryString(usedMemory) + " / " + getMemoryString(maxMemory);
                 /*glTranslatef(((float)barWidth - 2) / 2 - fontRenderer.getStringWidth(progress), 2, 0);
-                setColor(Config.fontColor);
+                setColor(fontColor);
                 glScalef(2, 2, 1);
                 glEnable(GL_TEXTURE_2D);
                 fontRenderer.drawString(progress, 0, 0, 0x000000);*/
@@ -526,7 +562,7 @@ public class CustomSplash
                     FMLLog.log.error("Error setting GL context:", e);
                     throw new RuntimeException(e);
                 }
-                glClearColor((float)((Config.backgroundColor >> 16) & 0xFF) / 0xFF, (float)((Config.backgroundColor >> 8) & 0xFF) / 0xFF, (float)(Config.backgroundColor & 0xFF) / 0xFF, 1);
+                glClearColor((float)((backgroundColor >> 16) & 0xFF) / 0xFF, (float)((backgroundColor >> 8) & 0xFF) / 0xFF, (float)(backgroundColor & 0xFF) / 0xFF, 1);
                 glDisable(GL_LIGHTING);
                 glDisable(GL_DEPTH_TEST);
                 glEnable(GL_BLEND);
@@ -596,7 +632,7 @@ public class CustomSplash
     @Deprecated
     public static void pause()
     {
-        if(!Config.enabled) return;
+        if(!enabled) return;
         checkThreadState();
         pause = true;
         lock.lock();
@@ -618,7 +654,7 @@ public class CustomSplash
     @Deprecated
     public static void resume()
     {
-        if(!Config.enabled) return;
+        if(!enabled) return;
         checkThreadState();
         pause = false;
         try
@@ -636,7 +672,7 @@ public class CustomSplash
 
     public static void finish()
     {
-        if(!Config.enabled) return;
+        if(!enabled) return;
         try
         {
             checkThreadState();
@@ -883,7 +919,7 @@ public class CustomSplash
 
     public static void drawVanillaScreen(TextureManager renderEngine) throws LWJGLException
     {
-        if(!Config.enabled)
+        if(!enabled)
         {
             Minecraft.getMinecraft().drawSplashScreen(renderEngine);
         }
@@ -891,7 +927,7 @@ public class CustomSplash
 
     public static void clearVanillaResources(TextureManager renderEngine, ResourceLocation mojangLogo)
     {
-        if(!Config.enabled)
+        if(!enabled)
         {
             renderEngine.deleteTexture(mojangLogo);
         }
