@@ -35,6 +35,7 @@ import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.Drawable;
 import org.lwjgl.opengl.SharedDrawable;
+import org.lwjgl.input.Keyboard;
 import org.lwjgl.util.glu.GLU;
 
 import javax.annotation.Nonnull;
@@ -60,8 +61,7 @@ import static org.lwjgl.opengl.GL12.GL_UNSIGNED_INT_8_8_8_8_REV;
  * Not a fully fleshed out API, may change in future MC versions.
  * However feel free to use and suggest additions.
  */
-public class CustomSplash
-{
+public class CustomSplash {
     private static Drawable d;
     private static volatile boolean pause = false;
     private static volatile boolean done = false;
@@ -96,6 +96,11 @@ public class CustomSplash
     private static Texture fontTexture;
     private static Texture logoTexture;
     private static Texture forgeTexture;
+    private static Texture dirtBackground;
+
+    private static volatile String warningWarning;
+    private static volatile String warningPrompt;
+    private static volatile Boolean warningResult;
 
     private static float memoryColorPercent;
     private static long memoryColorChangeTime;
@@ -105,8 +110,7 @@ public class CustomSplash
 
     public static final Semaphore mutex = new Semaphore(1);
 
-    public static void start()
-    {
+    public static void start() {
         Config.load();
 
         enabled = Config.enabled;
@@ -136,24 +140,20 @@ public class CustomSplash
 
         miscPack = createResourcePack(Config.miscPackFile);
         // getting debug info out of the way, while we still can
-        FMLCommonHandler.instance().registerCrashCallable(new ICrashCallable()
-        {
+        FMLCommonHandler.instance().registerCrashCallable(new ICrashCallable() {
             @Override
-            public String call() throws Exception
-            {
-                if (Minecraft.getMinecraft().isCallingFromMinecraftThread())
-                {
+            public String call() throws Exception {
+                if (Minecraft.getMinecraft().isCallingFromMinecraftThread()) {
                     return "' Vendor: '" + glGetString(GL_VENDOR) +
-                            "' Version: '" + glGetString(GL_VERSION) +
-                            "' Renderer: '" + glGetString(GL_RENDERER) +
-                            "'";
+                        "' Version: '" + glGetString(GL_VERSION) +
+                        "' Renderer: '" + glGetString(GL_RENDERER) +
+                        "'";
                 }
                 return "No OpenGL context found in the current thread: " + Thread.currentThread().getName();
             }
 
             @Override
-            public String getLabel()
-            {
+            public String getLabel() {
                 return "GL info";
             }
         });
@@ -162,14 +162,11 @@ public class CustomSplash
         report.getCategory().appendToStringBuilder(systemDetailsBuilder);
         FMLLog.log.info(systemDetailsBuilder.toString());
 
-        try
-        {
+        try {
             d = new SharedDrawable(Display.getDrawable());
             Display.getDrawable().releaseContext();
             d.makeCurrent();
-        }
-        catch (LWJGLException e)
-        {
+        } catch (LWJGLException e) {
             FMLLog.log.error("Error starting SplashProgress:", e);
             disableSplash(e);
         }
@@ -178,8 +175,7 @@ public class CustomSplash
         getMaxTextureSize();
 
         //Thread mainThread = Thread.currentThread();
-        thread = new Thread(new Runnable()
-        {
+        thread = new Thread(new Runnable() {
             private final int barWidth = 400;
             private final int barHeight = 20;
             private final int textHeight2 = 20;
@@ -189,19 +185,19 @@ public class CustomSplash
             private float smoothProgressFirst = 0.0f;
             private float smoothProgressPenult = 0.0f;
             private float smoothProgressLast = 0.0f;
+
             @Override
-            public void run()
-            {
+            public void run() {
                 setGL();
                 fontTexture = new Texture(fontLoc, null);
                 logoTexture = new Texture(logoLoc, null, true);
                 ModernSplash.logoGlTextureName = logoTexture.getName();
                 forgeTexture = new Texture(forgeLoc, forgeFallbackLoc);
+                dirtBackground = new Texture(new ResourceLocation("textures/gui/options_background.png"), null, false);
                 glEnable(GL_TEXTURE_2D);
                 fontRenderer = new SplashFontRenderer();
                 glDisable(GL_TEXTURE_2D);
-                while(!done)
-                {
+                while (!done) {
                     framecount++;
 
                     long fadeProgress = 0;
@@ -218,144 +214,211 @@ public class CustomSplash
                         }
                     }
 
-                    ProgressBar first = null, penult = null, last = null;
-                    Iterator<ProgressBar> i = ProgressManager.barIterator();
-                    while(i.hasNext())
-                    {
-                        if(first == null) first = i.next();
-                        else
-                        {
-                            penult = last;
-                            last = i.next();
-                        }
-                    }
+                    if (warningWarning != null && warningPrompt != null) {
+                        int w = Display.getWidth();
+                        int h = Display.getHeight();
+                        glClear(GL_COLOR_BUFFER_BIT);
+                        glViewport(0, 0, w, h);
+                        glMatrixMode(GL_PROJECTION);
+                        glLoadIdentity();
+                        glOrtho(320 - w / 2, 320 + w / 2, 240 + h / 2, 240 - h / 2, -1, 1);
+                        glMatrixMode(GL_MODELVIEW);
+                        glLoadIdentity();
 
-                    if (first != null) {
-                        float target = (float) (first.getStep() + 1) / (first.getSteps() + 1);
-                        smoothProgressFirst = smoothProgressFirst * 0.95f + target * 0.05f;
-                        if (smoothProgressFirst < 0.0f) smoothProgressFirst = 0.0f;
-                        if (smoothProgressFirst > 1.0f) smoothProgressFirst = 1.0f;
-                    } else if (ModernSplash.fadeOutStart > 0 && smoothProgressFirst < 0.99f) {
-                        smoothProgressFirst = smoothProgressFirst * 0.95f + 0.05f;
-                        if (smoothProgressFirst > 1.0f) smoothProgressFirst = 1.0f;
-                        ModernSplash.fadeOutStart = System.nanoTime();
-                    }
-                    if (penult != null) {
-                        float target = (float) (penult.getStep() + 1) / (penult.getSteps() + 1);
-                        smoothProgressPenult = smoothProgressPenult * 0.95f + target * 0.05f;
-                        if (smoothProgressPenult < 0.0f) smoothProgressPenult = 0.0f;
-                        if (smoothProgressPenult > 1.0f) smoothProgressPenult = 1.0f;
-                    }
-                    if (last != null) {
-                        float target = (float) (last.getStep() + 1) / (last.getSteps() + 1);
-                        smoothProgressLast = smoothProgressLast * 0.95f + target * 0.05f;
-                        if (smoothProgressLast < 0.0f) smoothProgressLast = 0.0f;
-                        if (smoothProgressLast > 1.0f) smoothProgressLast = 1.0f;
-                    }
-
-                    glClear(GL_COLOR_BUFFER_BIT);
-
-                    // matrix setup
-                    int w = Display.getWidth();
-                    int h = Display.getHeight();
-                    glViewport(0, 0, w, h);
-                    glMatrixMode(GL_PROJECTION);
-                    glLoadIdentity();
-                    glOrtho(320 - w/2, 320 + w/2, 240 + h/2, 240 - h/2, -1, 1);
-                    glMatrixMode(GL_MODELVIEW);
-                    glLoadIdentity();
-
-                    // mojang logo
-                    if (logoAlpha > 0.0f) {
-                        setColorWithAlpha(logoColor, logoAlpha);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+                        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+                        dirtBackground.bind();
                         glEnable(GL_TEXTURE_2D);
-                        logoTexture.bind();
+                        float left = 320 - (float) w / 2;
+                        float right = 320 + (float) w / 2;
+                        float top = 240 - (float) h / 2;
+                        float bottom = 240 + (float) h / 2;
+                        float us = (float) w / 64f;
+                        float vs = (float) h / 64f;
                         glBegin(GL_QUADS);
-                        logoTexture.texCoord(0, 0, 0);
-                        glVertex2f(320 - 256, 240 - 256);
-                        logoTexture.texCoord(0, 0, 1);
-                        glVertex2f(320 - 256, 240 + 256);
-                        logoTexture.texCoord(0, 1, 1);
-                        glVertex2f(320 + 256, 240 + 256);
-                        logoTexture.texCoord(0, 1, 0);
-                        glVertex2f(320 + 256, 240 - 256);
+                        glColor4f(0.25f, 0.25f, 0.25f, 1.0f);
+                        glTexCoord2f(0, 0);
+                        glVertex2f(left, top);
+                        glTexCoord2f(us, 0);
+                        glVertex2f(right, top);
+                        glTexCoord2f(us, vs);
+                        glVertex2f(right, bottom);
+                        glTexCoord2f(0, vs);
+                        glVertex2f(left, bottom);
                         glEnd();
+                        glColor4f(1, 1, 1, 1);
                         glDisable(GL_TEXTURE_2D);
-                    }
 
-                    // memory usage
-                    if (showMemory && !mimicModern)
-                    {
-                        glPushMatrix();
-                        glTranslatef(320 - (float) barWidth / 2, 20, 0);
-                        drawMemoryBar(barAlpha);
-                        glPopMatrix();
-                    }
-
-                    // timer
-                    if(enableTimer && barAlpha > 0.0f && !mimicModern) {
-                        glPushMatrix();
-                        setColorWithAlpha(fontColor, barAlpha);
-                        glTranslatef(320 - (float) Display.getWidth() / 2 + 4, 240 + (float) Display.getHeight() / 2 - textHeight2, 0);
-                        glScalef(2, 2, 1);
-                        glEnable(GL_TEXTURE_2D);
-                        String renderString = getString();
-                        fontRenderer.drawString(renderString, 0, 0, 0x000000);
-                        glDisable(GL_TEXTURE_2D);
-                        glPopMatrix();
-                    }
-
-                    // bars
-                    boolean fadingOut = ModernSplash.fadeOutStart > 0;
-                    if(first != null || (fadingOut && smoothProgressFirst > 0.0f))
-                    {
-                        glPushMatrix();
-                        glTranslatef(320 - (float)barWidth / 2, 310, 0);
-                        drawBar(first, barAlpha, smoothProgressFirst);
-                        if(!mimicModern && first != null) {
-                            if(penult != null)
-                            {
-                                glTranslatef(0, barOffset, 0);
-                                drawBar(penult, barAlpha, smoothProgressPenult);
+                        String[] warnLines = warningWarning.split("\n");
+                        float warnY = 180f;
+                        for (String line : warnLines) {
+                            if (line.isEmpty()) {
+                                warnY += 20;
+                                continue;
                             }
-                            if(last != null)
-                            {
-                                glTranslatef(0, barOffset, 0);
-                                drawBar(last, barAlpha, smoothProgressLast);
+                            glPushMatrix();
+                            int lw = fontRenderer.getStringWidth(line);
+                            glTranslatef(320 - lw, warnY, 0);
+                            glScalef(2, 2, 1);
+                            glEnable(GL_TEXTURE_2D);
+                            fontRenderer.drawString(line, 0, 0, 0xFFFFFF);
+                            glDisable(GL_TEXTURE_2D);
+                            glPopMatrix();
+                            warnY += 20;
+                        }
+
+                        warnY += 10;
+
+                        String[] promptLines = warningPrompt.split("\n");
+                        for (String line : promptLines) {
+                            if (line.isEmpty()) {
+                                warnY += 20;
+                                continue;
+                            }
+                            glPushMatrix();
+                            int lw = fontRenderer.getStringWidth(line);
+                            glTranslatef(320 - lw, warnY, 0);
+                            glScalef(2, 2, 1);
+                            glEnable(GL_TEXTURE_2D);
+                            fontRenderer.drawString(line, 0, 0, 0xFFFFFF);
+                            glDisable(GL_TEXTURE_2D);
+                            glPopMatrix();
+                            warnY += 20;
+                        }
+                    } else {
+                        ProgressBar first = null, penult = null, last = null;
+                        Iterator<ProgressBar> i = ProgressManager.barIterator();
+                        while (i.hasNext()) {
+                            if (first == null) first = i.next();
+                            else {
+                                penult = last;
+                                last = i.next();
                             }
                         }
-                        glPopMatrix();
-                    }
 
-                    if (forgeLogo && barAlpha > 0.0f && !mimicModern) {
-
-                        angle += 1;
-
-                        // forge logo
-                        setColorWithAlpha(0xFFFFFF, barAlpha);
-                        float fw = (float) forgeTexture.getWidth() / 2;
-                        float fh = (float) forgeTexture.getHeight() / 2;
-                        if (rotate) {
-                            float sh = Math.max(fw, fh);
-                            glTranslatef(320 + w / 2 - sh - logoOffset, 240 + h / 2 - sh - logoOffset, 0);
-                            glRotatef(angle, 0, 0, 1);
-                        } else {
-                            glTranslatef(320 + w / 2 - fw - logoOffset, 240 + h / 2 - fh - logoOffset, 0);
+                        if (first != null) {
+                            float target = (float) (first.getStep() + 1) / (first.getSteps() + 1);
+                            smoothProgressFirst = smoothProgressFirst * 0.95f + target * 0.05f;
+                            if (smoothProgressFirst < 0.0f) smoothProgressFirst = 0.0f;
+                            if (smoothProgressFirst > 1.0f) smoothProgressFirst = 1.0f;
+                        } else if (ModernSplash.fadeOutStart > 0 && smoothProgressFirst < 0.99f) {
+                            smoothProgressFirst = smoothProgressFirst * 0.95f + 0.05f;
+                            if (smoothProgressFirst > 1.0f) smoothProgressFirst = 1.0f;
+                            ModernSplash.fadeOutStart = System.nanoTime();
                         }
-                        int f = (angle / 5) % forgeTexture.getFrames();
-                        glEnable(GL_TEXTURE_2D);
-                        forgeTexture.bind();
-                        glBegin(GL_QUADS);
-                        forgeTexture.texCoord(f, 0, 0);
-                        glVertex2f(-fw, -fh);
-                        forgeTexture.texCoord(f, 0, 1);
-                        glVertex2f(-fw, fh);
-                        forgeTexture.texCoord(f, 1, 1);
-                        glVertex2f(fw, fh);
-                        forgeTexture.texCoord(f, 1, 0);
-                        glVertex2f(fw, -fh);
-                        glEnd();
-                        glDisable(GL_TEXTURE_2D);
+                        if (penult != null) {
+                            float target = (float) (penult.getStep() + 1) / (penult.getSteps() + 1);
+                            smoothProgressPenult = smoothProgressPenult * 0.95f + target * 0.05f;
+                            if (smoothProgressPenult < 0.0f) smoothProgressPenult = 0.0f;
+                            if (smoothProgressPenult > 1.0f) smoothProgressPenult = 1.0f;
+                        }
+                        if (last != null) {
+                            float target = (float) (last.getStep() + 1) / (last.getSteps() + 1);
+                            smoothProgressLast = smoothProgressLast * 0.95f + target * 0.05f;
+                            if (smoothProgressLast < 0.0f) smoothProgressLast = 0.0f;
+                            if (smoothProgressLast > 1.0f) smoothProgressLast = 1.0f;
+                        }
+
+                        glClear(GL_COLOR_BUFFER_BIT);
+
+                        // matrix setup
+                        int w = Display.getWidth();
+                        int h = Display.getHeight();
+                        glViewport(0, 0, w, h);
+                        glMatrixMode(GL_PROJECTION);
+                        glLoadIdentity();
+                        glOrtho(320 - w / 2, 320 + w / 2, 240 + h / 2, 240 - h / 2, -1, 1);
+                        glMatrixMode(GL_MODELVIEW);
+                        glLoadIdentity();
+
+                        // mojang logo
+                        if (logoAlpha > 0.0f) {
+                            setColorWithAlpha(logoColor, logoAlpha);
+                            glEnable(GL_TEXTURE_2D);
+                            logoTexture.bind();
+                            glBegin(GL_QUADS);
+                            logoTexture.texCoord(0, 0, 0);
+                            glVertex2f(320 - 256, 240 - 256);
+                            logoTexture.texCoord(0, 0, 1);
+                            glVertex2f(320 - 256, 240 + 256);
+                            logoTexture.texCoord(0, 1, 1);
+                            glVertex2f(320 + 256, 240 + 256);
+                            logoTexture.texCoord(0, 1, 0);
+                            glVertex2f(320 + 256, 240 - 256);
+                            glEnd();
+                            glDisable(GL_TEXTURE_2D);
+                        }
+
+                        // memory usage
+                        if (showMemory && !mimicModern) {
+                            glPushMatrix();
+                            glTranslatef(320 - (float) barWidth / 2, 20, 0);
+                            drawMemoryBar(barAlpha);
+                            glPopMatrix();
+                        }
+
+                        // timer
+                        if (enableTimer && barAlpha > 0.0f && !mimicModern) {
+                            glPushMatrix();
+                            setColorWithAlpha(fontColor, barAlpha);
+                            glTranslatef(320 - (float) Display.getWidth() / 2 + 4, 240 + (float) Display.getHeight() / 2 - textHeight2, 0);
+                            glScalef(2, 2, 1);
+                            glEnable(GL_TEXTURE_2D);
+                            String renderString = getString();
+                            fontRenderer.drawString(renderString, 0, 0, 0x000000);
+                            glDisable(GL_TEXTURE_2D);
+                            glPopMatrix();
+                        }
+
+                        // bars
+                        boolean fadingOut = ModernSplash.fadeOutStart > 0;
+                        if (first != null || (fadingOut && smoothProgressFirst > 0.0f)) {
+                            glPushMatrix();
+                            glTranslatef(320 - (float) barWidth / 2, 310, 0);
+                            drawBar(first, barAlpha, smoothProgressFirst);
+                            if (!mimicModern && first != null) {
+                                if (penult != null) {
+                                    glTranslatef(0, barOffset, 0);
+                                    drawBar(penult, barAlpha, smoothProgressPenult);
+                                }
+                                if (last != null) {
+                                    glTranslatef(0, barOffset, 0);
+                                    drawBar(last, barAlpha, smoothProgressLast);
+                                }
+                            }
+                            glPopMatrix();
+                        }
+
+                        if (forgeLogo && barAlpha > 0.0f && !mimicModern) {
+
+                            angle += 1;
+
+                            // forge logo
+                            setColorWithAlpha(0xFFFFFF, barAlpha);
+                            float fw = (float) forgeTexture.getWidth() / 2;
+                            float fh = (float) forgeTexture.getHeight() / 2;
+                            if (rotate) {
+                                float sh = Math.max(fw, fh);
+                                glTranslatef(320 + w / 2 - sh - logoOffset, 240 + h / 2 - sh - logoOffset, 0);
+                                glRotatef(angle, 0, 0, 1);
+                            } else {
+                                glTranslatef(320 + w / 2 - fw - logoOffset, 240 + h / 2 - fh - logoOffset, 0);
+                            }
+                            int f = (angle / 5) % forgeTexture.getFrames();
+                            glEnable(GL_TEXTURE_2D);
+                            forgeTexture.bind();
+                            glBegin(GL_QUADS);
+                            forgeTexture.texCoord(f, 0, 0);
+                            glVertex2f(-fw, -fh);
+                            forgeTexture.texCoord(f, 0, 1);
+                            glVertex2f(-fw, fh);
+                            forgeTexture.texCoord(f, 1, 1);
+                            glVertex2f(fw, fh);
+                            forgeTexture.texCoord(f, 1, 0);
+                            glVertex2f(fw, -fh);
+                            glEnd();
+                            glDisable(GL_TEXTURE_2D);
+                        }
                     }
 
                     // We use mutex to indicate safely to the main thread that we're taking the display global lock
@@ -373,8 +436,7 @@ public class CustomSplash
                         updateTiming += dur;
                     }
                     mutex.release();
-                    if(pause)
-                    {
+                    if (pause) {
                         clearGL();
                         setGL();
                     }
@@ -385,15 +447,16 @@ public class CustomSplash
                     // 4 milliseconds is a guess - but it should be enough to trigger in most circumstances. (Maybe if
                     // 240FPS is possible, this won't fire?)
                     if (framecount >= TIMING_FRAME_COUNT && updateTiming > TIMING_FRAME_THRESHOLD) {
-                        if (!isDisplayVSyncForced)
-                        {
+                        if (!isDisplayVSyncForced) {
                             isDisplayVSyncForced = true;
                             FMLLog.log.info("Using alternative sync timing : {} frames of Display.update took {} nanos", TIMING_FRAME_COUNT, updateTiming);
                         }
-                        try { Thread.sleep(16); } catch (InterruptedException ignored) {}
-                    } else
-                    {
-                        if (framecount ==TIMING_FRAME_COUNT) {
+                        try {
+                            Thread.sleep(16);
+                        } catch (InterruptedException ignored) {
+                        }
+                    } else {
+                        if (framecount == TIMING_FRAME_COUNT) {
                             FMLLog.log.info("Using sync timing. {} frames of Display.update took {} nanos", TIMING_FRAME_COUNT, updateTiming);
                         }
                         Display.sync(100);
@@ -402,17 +465,17 @@ public class CustomSplash
                 clearGL();
             }
 
-            private String getString(){
+            private String getString() {
                 long startupTime = ManagementFactory.getRuntimeMXBean().getUptime();
 
-                if(ModernSplash.doneTime > 0) startupTime = ModernSplash.doneTime;
+                if (ModernSplash.doneTime > 0) startupTime = ModernSplash.doneTime;
 
                 long minutes = (startupTime / 1000) / 60;
                 long seconds = (startupTime / 1000) % 60;
 
                 String str = "Startup: " + minutes + "m " + seconds + "s";
 
-                if(MSLoadingPlugin.expectedTime > 0){
+                if (MSLoadingPlugin.expectedTime > 0) {
                     long ex_minutes = (MSLoadingPlugin.expectedTime / 1000) / 60;
                     long ex_seconds = (MSLoadingPlugin.expectedTime / 1000) % 60;
 
@@ -422,13 +485,11 @@ public class CustomSplash
                 return str;
             }
 
-            private void setColor(int color)
-            {
-                glColor3ub((byte)((color >> 16) & 0xFF), (byte)((color >> 8) & 0xFF), (byte)(color & 0xFF));
+            private void setColor(int color) {
+                glColor3ub((byte) ((color >> 16) & 0xFF), (byte) ((color >> 8) & 0xFF), (byte) (color & 0xFF));
             }
 
-            private void setColorWithAlpha(int color, float alpha)
-            {
+            private void setColorWithAlpha(int color, float alpha) {
                 glColor4f(
                     ((color >> 16) & 0xFF) / 255.0f,
                     ((color >> 8) & 0xFF) / 255.0f,
@@ -437,8 +498,7 @@ public class CustomSplash
                 );
             }
 
-            private void drawBox(int w, int h)
-            {
+            private void drawBox(int w, int h) {
                 glBegin(GL_QUADS);
                 glVertex2f(0, 0);
                 glVertex2f(0, h);
@@ -447,8 +507,7 @@ public class CustomSplash
                 glEnd();
             }
 
-            private void drawBar(ProgressBar b, float alpha, float smoothProgress)
-            {
+            private void drawBar(ProgressBar b, float alpha, float smoothProgress) {
                 if (alpha <= 0.0f) return;
                 if (!mimicModern && b != null) {
                     String progress = "" + b.getStep() + "/" + b.getSteps();
@@ -505,26 +564,20 @@ public class CustomSplash
                 // slidy part
 
                 long time = System.currentTimeMillis();
-                if (usedMemoryPercent > memoryColorPercent || (time - memoryColorChangeTime > 1000))
-                {
+                if (usedMemoryPercent > memoryColorPercent || (time - memoryColorChangeTime > 1000)) {
                     memoryColorChangeTime = time;
                     memoryColorPercent = usedMemoryPercent;
                 }
 
                 int memoryBarColor;
-                if (memoryColorPercent < 0.75f)
-                {
+                if (memoryColorPercent < 0.75f) {
                     memoryBarColor = memoryGoodColor;
-                }
-                else if (memoryColorPercent < 0.85f)
-                {
+                } else if (memoryColorPercent < 0.85f) {
                     memoryBarColor = memoryWarnColor;
-                }
-                else
-                {
+                } else {
                     memoryBarColor = memoryLowColor;
                 }
-                if(showTotalMemoryLine) {
+                if (showTotalMemoryLine) {
                     setColorWithAlpha(memoryLowColor, alpha);
                     glPushMatrix();
                     glTranslatef((float) ((barWidth - 8) * (totalMemory)) / (maxMemory) - 2, 2, 0);
@@ -545,32 +598,26 @@ public class CustomSplash
                 glPopMatrix();
             }
 
-            private String getMemoryString(int memory)
-            {
+            private String getMemoryString(int memory) {
                 return StringUtils.leftPad(Integer.toString(memory), 4, ' ') + " MB";
             }
 
-            private void setGL()
-            {
+            private void setGL() {
                 lock.lock();
-                try
-                {
+                try {
                     Display.getDrawable().makeCurrent();
-                }
-                catch (LWJGLException e)
-                {
+                } catch (LWJGLException e) {
                     FMLLog.log.error("Error setting GL context:", e);
                     throw new RuntimeException(e);
                 }
-                glClearColor((float)((backgroundColor >> 16) & 0xFF) / 0xFF, (float)((backgroundColor >> 8) & 0xFF) / 0xFF, (float)(backgroundColor & 0xFF) / 0xFF, 1);
+                glClearColor((float) ((backgroundColor >> 16) & 0xFF) / 0xFF, (float) ((backgroundColor >> 8) & 0xFF) / 0xFF, (float) (backgroundColor & 0xFF) / 0xFF, 1);
                 glDisable(GL_LIGHTING);
                 glDisable(GL_DEPTH_TEST);
                 glEnable(GL_BLEND);
                 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             }
 
-            private void clearGL()
-            {
+            private void clearGL() {
                 Minecraft mc = Minecraft.getMinecraft();
                 mc.displayWidth = Display.getWidth();
                 mc.displayHeight = Display.getHeight();
@@ -580,26 +627,19 @@ public class CustomSplash
                 glDepthFunc(GL_LEQUAL);
                 glEnable(GL_ALPHA_TEST);
                 glAlphaFunc(GL_GREATER, .1f);
-                try
-                {
+                try {
                     Display.getDrawable().releaseContext();
-                }
-                catch (LWJGLException e)
-                {
+                } catch (LWJGLException e) {
                     FMLLog.log.error("Error releasing GL context:", e);
                     throw new RuntimeException(e);
-                }
-                finally
-                {
+                } finally {
                     lock.unlock();
                 }
             }
         });
-        thread.setUncaughtExceptionHandler(new UncaughtExceptionHandler()
-        {
+        thread.setUncaughtExceptionHandler(new UncaughtExceptionHandler() {
             @Override
-            public void uncaughtException(Thread t, Throwable e)
-            {
+            public void uncaughtException(Thread t, Throwable e) {
                 FMLLog.log.error("Splash thread Exception", e);
                 threadError = e;
             }
@@ -609,40 +649,36 @@ public class CustomSplash
     }
 
     private static int max_texture_size = -1;
-    public static int getMaxTextureSize()
-    {
+
+    public static int getMaxTextureSize() {
         if (max_texture_size != -1) return max_texture_size;
         max_texture_size = glGetInteger(GL_MAX_TEXTURE_SIZE);
         return max_texture_size;
     }
 
-    private static void checkThreadState()
-    {
-        if(thread.getState() == Thread.State.TERMINATED || threadError != null)
-        {
+    private static void checkThreadState() {
+        if (thread.getState() == Thread.State.TERMINATED || threadError != null) {
             throw new IllegalStateException("Splash thread", threadError);
         }
     }
+
     /**
      * Call before you need to explicitly modify GL context state during loading.
      * Resource loading doesn't usually require this call.
      * Call {@link #resume()} when you're done.
+     *
      * @deprecated not a stable API, will break, don't use this yet
      */
     @Deprecated
-    public static void pause()
-    {
-        if(!enabled) return;
+    public static void pause() {
+        if (!enabled) return;
         checkThreadState();
         pause = true;
         lock.lock();
-        try
-        {
+        try {
             d.releaseContext();
             Display.getDrawable().makeCurrent();
-        }
-        catch (LWJGLException e)
-        {
+        } catch (LWJGLException e) {
             FMLLog.log.error("Error setting GL context:", e);
             throw new RuntimeException(e);
         }
@@ -652,29 +688,23 @@ public class CustomSplash
      * @deprecated not a stable API, will break, don't use this yet
      */
     @Deprecated
-    public static void resume()
-    {
-        if(!enabled) return;
+    public static void resume() {
+        if (!enabled) return;
         checkThreadState();
         pause = false;
-        try
-        {
+        try {
             Display.getDrawable().releaseContext();
             d.makeCurrent();
-        }
-        catch (LWJGLException e)
-        {
+        } catch (LWJGLException e) {
             FMLLog.log.error("Error releasing GL context:", e);
             throw new RuntimeException(e);
         }
         lock.unlock();
     }
 
-    public static void finish()
-    {
-        if(!enabled) return;
-        try
-        {
+    public static void finish() {
+        if (!enabled) return;
+        try {
             checkThreadState();
             ModernSplash.fadeOutStart = System.nanoTime();
             thread.join(3000);
@@ -688,37 +718,27 @@ public class CustomSplash
             Display.getDrawable().makeCurrent();
             fontTexture.delete();
             forgeTexture.delete();
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             FMLLog.log.error("Error finishing SplashProgress:", e);
             disableSplash(e);
         }
     }
 
-    private static void disableSplash(Exception e)
-    {
-        if (Config.disableSplash())
-        {
-            throw new EnhancedRuntimeException(e)
-            {
+    private static void disableSplash(Exception e) {
+        if (Config.disableSplash()) {
+            throw new EnhancedRuntimeException(e) {
                 @Override
-                protected void printStackTrace(WrappedPrintStream stream)
-                {
+                protected void printStackTrace(WrappedPrintStream stream) {
                     stream.println("SplashProgress has detected a error loading Minecraft.");
                     stream.println("This can sometimes be caused by bad video drivers.");
                     stream.println("We have automatically disabled the new Splash Screen in config/modernsplash.cfg.");
                     stream.println("Try reloading minecraft before reporting any errors.");
                 }
             };
-        }
-        else
-        {
-            throw new EnhancedRuntimeException(e)
-            {
+        } else {
+            throw new EnhancedRuntimeException(e) {
                 @Override
-                protected void printStackTrace(WrappedPrintStream stream)
-                {
+                protected void printStackTrace(WrappedPrintStream stream) {
                     stream.println("SplashProgress has detected a error loading Minecraft.");
                     stream.println("This can sometimes be caused by bad video drivers.");
                     stream.println("Please try disabling the new Splash Screen in config/modernsplash.cfg.");
@@ -728,23 +748,64 @@ public class CustomSplash
         }
     }
 
-    private static IResourcePack createResourcePack(File file)
-    {
-        if(file.isDirectory())
-        {
+    private static IResourcePack createResourcePack(File file) {
+        if (file.isDirectory()) {
             return new FolderResourcePack(file);
-        }
-        else
-        {
+        } else {
             return new FileResourcePack(file);
+        }
+    }
+
+    public static boolean confirm(String warning, String prompt) {
+        if (!enabled) {
+            FMLLog.log.warn("Splash screen disabled, logging warning:\n{}", warning);
+            return true;
+        }
+        warningWarning = warning;
+        warningPrompt = prompt;
+        warningResult = null;
+
+        try {
+            long deadline = System.currentTimeMillis() + 300_000L;
+            while (warningResult == null) {
+                if (thread != null && (thread.getState() == Thread.State.TERMINATED || threadError != null)) {
+                    FMLLog.log.error("Splash thread died during warning, auto-confirming", threadError);
+                    return true;
+                }
+                if (System.currentTimeMillis() > deadline) {
+                    FMLLog.log.warn("Warning confirmation timed out after 5 min, auto-confirming");
+                    return true;
+                }
+                if (mutex.tryAcquire()) {
+                    try {
+                        Display.processMessages();
+                        while (Keyboard.next()) {
+                            if (Keyboard.getEventKeyState()) {
+                                warningResult = (Keyboard.getEventKey() != Keyboard.KEY_ESCAPE);
+                            }
+                        }
+                    } finally {
+                        mutex.release();
+                    }
+                }
+                try {
+                    Thread.sleep(25);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return true;
+                }
+            }
+            return warningResult;
+        } finally {
+            warningWarning = null;
+            warningPrompt = null;
         }
     }
 
     private static final IntBuffer buf = BufferUtils.createIntBuffer(4 * 1024 * 1024);
 
     @SuppressWarnings("unused")
-    private static class Texture
-    {
+    private static class Texture {
         private final ResourceLocation location;
         private final int name;
         private final int width;
@@ -752,69 +813,58 @@ public class CustomSplash
         private final int frames;
         private final int size;
 
-        public Texture(ResourceLocation location, @Nullable ResourceLocation fallback)
-        {
+        public Texture(ResourceLocation location, @Nullable ResourceLocation fallback) {
             this(location, fallback, true);
         }
 
-        public Texture(ResourceLocation location, @Nullable ResourceLocation fallback, boolean allowRP)
-        {
+        public Texture(ResourceLocation location, @Nullable ResourceLocation fallback, boolean allowRP) {
             InputStream s = null;
-            try
-            {
+            try {
                 this.location = location;
                 s = open(location, fallback, allowRP);
                 ImageInputStream stream = ImageIO.createImageInputStream(s);
                 Iterator<ImageReader> readers = ImageIO.getImageReaders(stream);
-                if(!readers.hasNext()) throw new IOException("No suitable reader found for image" + location);
+                if (!readers.hasNext()) throw new IOException("No suitable reader found for image" + location);
                 ImageReader reader = readers.next();
                 reader.setInput(stream);
                 int frames = reader.getNumImages(true);
                 BufferedImage[] images = new BufferedImage[frames];
-                for(int i = 0; i < frames; i++)
-                {
+                for (int i = 0; i < frames; i++) {
                     images[i] = reader.read(i);
                 }
                 reader.dispose();
                 width = images[0].getWidth();
                 int height = images[0].getHeight();
                 // Animation strip
-                if (height > width && height % width == 0)
-                {
+                if (height > width && height % width == 0) {
                     frames = height / width;
                     BufferedImage original = images[0];
                     height = width;
                     images = new BufferedImage[frames];
-                    for (int i = 0; i < frames; i++)
-                    {
+                    for (int i = 0; i < frames; i++) {
                         images[i] = original.getSubimage(0, i * height, width, height);
                     }
                 }
                 this.frames = frames;
                 this.height = height;
                 int size = 1;
-                while((size / width) * (size / height) < frames) size *= 2;
+                while ((size / width) * (size / height) < frames) size *= 2;
                 this.size = size;
                 glEnable(GL_TEXTURE_2D);
-                synchronized(CustomSplash.class)
-                {
+                synchronized (CustomSplash.class) {
                     name = glGenTextures();
                     glBindTexture(GL_TEXTURE_2D, name);
                 }
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size, size, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, (IntBuffer)null);
+                glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size, size, 0, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, (IntBuffer) null);
                 checkGLError("Texture creation");
-                for(int i = 0; i * (size / width) < frames; i++)
-                {
-                    for(int j = 0; i * (size / width) + j < frames && j < size / width; j++)
-                    {
+                for (int i = 0; i * (size / width) < frames; i++) {
+                    for (int j = 0; i * (size / width) + j < frames && j < size / width; j++) {
                         buf.clear();
                         BufferedImage image = images[i * (size / width) + j];
-                        for(int k = 0; k < height; k++)
-                        {
-                            for(int l = 0; l < width; l++)
-                            {
+                        for (int k = 0; k < height; k++) {
+                            for (int l = 0; l < width; l++) {
                                 buf.put(image.getRGB(l, k));
                             }
                         }
@@ -825,145 +875,113 @@ public class CustomSplash
                 }
                 glBindTexture(GL_TEXTURE_2D, 0);
                 glDisable(GL_TEXTURE_2D);
-            }
-            catch(IOException e)
-            {
+            } catch (IOException e) {
                 FMLLog.log.error("Error reading texture from file: {}", location, e);
                 throw new RuntimeException(e);
-            }
-            finally
-            {
+            } finally {
                 IOUtils.closeQuietly(s);
             }
         }
 
-        public ResourceLocation getLocation()
-        {
+        public ResourceLocation getLocation() {
             return location;
         }
 
-        public int getName()
-        {
+        public int getName() {
             return name;
         }
 
-        public int getWidth()
-        {
+        public int getWidth() {
             return width;
         }
 
-        public int getHeight()
-        {
+        public int getHeight() {
             return height;
         }
 
-        public int getFrames()
-        {
+        public int getFrames() {
             return frames;
         }
 
-        public int getSize()
-        {
+        public int getSize() {
             return size;
         }
 
-        public void bind()
-        {
+        public void bind() {
             glBindTexture(GL_TEXTURE_2D, name);
         }
 
-        public void delete()
-        {
+        public void delete() {
             glDeleteTextures(name);
         }
 
-        public float getU(int frame, float u)
-        {
+        public float getU(int frame, float u) {
             return width * (frame % (size / width) + u) / size;
         }
 
-        public float getV(int frame, float v)
-        {
+        public float getV(int frame, float v) {
             return height * (frame / (size / width) + v) / size;
         }
 
-        public void texCoord(int frame, float u, float v)
-        {
+        public void texCoord(int frame, float u, float v) {
             glTexCoord2f(getU(frame, u), getV(frame, v));
         }
     }
 
-    private static class SplashFontRenderer extends FontRenderer
-    {
-        public SplashFontRenderer()
-        {
+    private static class SplashFontRenderer extends FontRenderer {
+        public SplashFontRenderer() {
             super(Minecraft.getMinecraft().gameSettings, fontTexture.getLocation(), null, false);
             super.onResourceManagerReload(null);
         }
 
         @Override
-        protected void bindTexture(@Nonnull ResourceLocation location)
-        {
-            if(location != locationFontTexture) throw new IllegalArgumentException();
+        protected void bindTexture(@Nonnull ResourceLocation location) {
+            if (location != locationFontTexture) throw new IllegalArgumentException();
             fontTexture.bind();
         }
 
         @Nonnull
         @Override
-        protected IResource getResource(@Nonnull ResourceLocation location) throws IOException
-        {
+        protected IResource getResource(@Nonnull ResourceLocation location) throws IOException {
             DefaultResourcePack pack = Minecraft.getMinecraft().defaultResourcePack;
             return new SimpleResource(pack.getPackName(), location, pack.getInputStream(location), null, null);
         }
     }
 
-    public static void drawVanillaScreen(TextureManager renderEngine) throws LWJGLException
-    {
-        if(!enabled)
-        {
+    public static void drawVanillaScreen(TextureManager renderEngine) throws LWJGLException {
+        if (!enabled) {
             Minecraft.getMinecraft().drawSplashScreen(renderEngine);
         }
     }
 
-    public static void clearVanillaResources(TextureManager renderEngine, ResourceLocation mojangLogo)
-    {
-        if(!enabled)
-        {
+    public static void clearVanillaResources(TextureManager renderEngine, ResourceLocation mojangLogo) {
+        if (!enabled) {
             renderEngine.deleteTexture(mojangLogo);
         }
     }
 
-    public static void checkGLError(String where)
-    {
+    public static void checkGLError(String where) {
         int err = glGetError();
-        if (err != 0)
-        {
+        if (err != 0) {
             throw new IllegalStateException(where + ": " + GLU.gluErrorString(err));
         }
     }
 
-    private static InputStream open(ResourceLocation loc, @Nullable ResourceLocation fallback, boolean allowResourcePack) throws IOException
-    {
+    private static InputStream open(ResourceLocation loc, @Nullable ResourceLocation fallback, boolean allowResourcePack) throws IOException {
         if (!allowResourcePack)
             return mcPack.getInputStream(loc);
 
-        if(miscPack.resourceExists(loc))
-        {
+        if (miscPack.resourceExists(loc)) {
             return miscPack.getInputStream(loc);
-        }
-        else if(fmlPack.resourceExists(loc))
-        {
+        } else if (fmlPack.resourceExists(loc)) {
             return fmlPack.getInputStream(loc);
-        }
-        else if(!mcPack.resourceExists(loc) && fallback != null)
-        {
+        } else if (!mcPack.resourceExists(loc) && fallback != null) {
             return open(fallback, null, true);
         }
         return mcPack.getInputStream(loc);
     }
 
-    private static int bytesToMb(long bytes)
-    {
+    private static int bytesToMb(long bytes) {
         return (int) (bytes / 1024L / 1024L);
     }
 }
